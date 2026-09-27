@@ -45,6 +45,11 @@ def _keep(value):
     return len(bare) < MIN_VALUE or bare.lower() in KEEP_VALUES or bare == MASK
 
 
+def _kept_name(name):
+    """A dotted or prefixed path keeps the exemption of its final segment."""
+    return name.lower().rsplit('.', 1)[-1] in KEEP_NAMES
+
+
 class Redactor:
     """Holds literal secret values plus the shape/name rules above."""
 
@@ -77,7 +82,7 @@ class Redactor:
             value = shape.sub(MASK, value)
 
         def assignment(match):
-            if match.group('name').lower() in KEEP_NAMES or _keep(match.group('value')):
+            if _kept_name(match.group('name')) or _keep(match.group('value')):
                 return match.group(0)
             return match.group('name') + match.group('sep') + MASK
         return ASSIGNMENT.sub(assignment, value)
@@ -91,7 +96,7 @@ class Redactor:
             for key, item in obj.items():
                 name = self.text(key) if isinstance(key, str) else key
                 # A secret-looking field name masks its own value, whatever it holds.
-                if (isinstance(key, str) and key.lower() not in KEEP_NAMES
+                if (isinstance(key, str) and not _kept_name(key)
                         and SECRET_NAME.search(key) and isinstance(item, str) and not _keep(item)):
                     result[name] = MASK
                 else:
