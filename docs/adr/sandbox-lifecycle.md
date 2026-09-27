@@ -33,6 +33,8 @@ Active↔Idle 也使用 operation；切換確認前維持原 observed_state 並�
 
 Error 必須保留 `last_confirmed_state`、錯誤代碼與資源清單；容量只在確認釋放後歸還。Lost 保留資源預留，獨立於 Runner 的 host watchdog 依 lease fence 舊 generation；沒有停止證據不可宣稱釋放容量或停止計量。
 
+記憶體終止補充（#67 提案，未實作）：確認終止映射為 Error，`error.code=memory_limit_terminated`；重試耗盡仍是 Error，代碼 `recovery_retry_exhausted`，不新增 recovery-blocked 狀態。對帳確認舊實體停止、憑證／容量／volume 檢查通過後，使用既有 state endpoint 要求 Active，經 operation 進 Resuming，建立新 generation；健康確認後才進 Active，失敗回 Error、未知回 Lost。詳見 [記憶體恢復契約](memory-session-recovery.md)。
+
 ## 3. 統一 API
 
 公開入口同一 `console.<domain>`：靜態 console、`/v1` API 與 terminal WebSocket。Runner 僅走私網且驗證 service credential；CLI 不直接呼叫 Runner。GitHub Pages 仍為純模擬，沒有正式 key。
@@ -78,6 +80,10 @@ policy 欄位：`auto_idle_enabled`、`idle_after_seconds`、`auto_suspend_enabl
 workspace 也可能含使用者自行寫入的秘密：排除常見檔名不能保證沒有秘密。受限試用只備份使用者確認的資料範圍，說明限制；未通過備份／還原驗收不得承諾自動備份。備份加密、ACL、retention 數值由試用放行表確認，不由本 ADR 猜定。
 
 cold Suspend 保留檔案不代表 key 也保存，Web 恢復尚無安全重送流程時引導使用 CLI，不偷偷落盤 key。代理注入屬後續完整 Alpha 能力；受限試用必須揭露 key 可被沙盒中的使用者／Agent 程序讀取。
+
+### 記憶體終止後重新建立執行實體（#67 提案）
+
+此路徑套用同一保存矩陣：保留 approved workspace/home volumes、session ID/cwd 及 metadata；不保留 RAM、程序、tmux/socket、rootfs 可寫層或 ephemeral credential。CLI 重新提供 key，不能靠 volume 偷存 key。已落盤不等於所有應用程式緩衝／部分寫入都安全；無法依賴 OOM 當下的 save hook。當前實測只涵蓋同一容器 docker start 與兩個 fsynced marker，重新建立實體仍需 #11/#19 驗收。
 
 ## 6. 首版邊界及驗收
 
