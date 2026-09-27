@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+"""Create/check an evidence bundle. Completeness is not a runtime go decision."""
+import argparse
+import hashlib
+import json
+import re
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+CASES = tuple(f"E{i:02}" for i in range(1, 11))
+ENV_FIELDS = (
+    "host_alias", "authorization_ref", "operator", "kernel", "arch", "docker",
+    "runsc", "runsc_platform", "claude", "node", "git", "tmux", "cgroup", "image_pin",
+    "limits_and_headroom", "model_budget", "credential_delivery_ref",
+)
+
+
+def template():
+    return {
+        "schema_version": 1, "run_id": str(uuid.uuid4()),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "environment": {key: None for key in ENV_FIELDS},
+        "preflight": {"verdict": "not_run", "evidence": []},
+        "cases": [{"id": key, "status": "not_run", "started_at": None,
+                   "finished_at": None, "command": None, "exit_code": None,
+                   "expected": None, "observed": None,
+                   "claude_before": None, "claude_after": None, "evidence": []}
+                  for key in CASES],
+        "cleanup": {"status": "not_run", "evidence": []},
+    }
+
+
+def nonempty(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
+def instant(value):
+    if not isinstance(value, str):
+        raise ValueError("timestamp required")
+    result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if result.utcoffset() is None:
+        raise ValueError("timestamp requires timezone")
+    return result
+
+
+def check(report, root):
+    problems = []
+    root = Path(root).resolve()
+
+    def evidence(items, label):
+        if not isinstance(items, list) or not items:
+            problems.append(f"{label}: evidence required")
+            return
+        for item in items:
+            try:
+                relative = Path(item["path"])
+                digest = item["sha256"]
+                target = (root / relative).resolve()
+                if relative.is_absolute() or not target.is_relative_to(root):
+                    raise ValueError("outside evidence bundle")
+                if not re.fullmatch(r"[0-9a-f]{64}", digest):
+                    raise ValueError("invalid hash")
+                if hashlib.sha256(target.read_bytes()).hexdigest() != digest:
+                    raise ValueError("hash mismatch")
+            except (OSError, ValueError, KeyError, TypeError):
+                problems.append(f"{label}: missing/invalid evidence or hash mismatch")
+
+    if not isinstance(report, dict):
+        return {"status": "incomplete", "problems": ["report must be an object"]}, 2
+    if type(report.get("schema_version")) is not int or report["schema_version"] != 1:
+        problems.append("unsupported schema_version")
+    if not nonempty(report.get("run_id")):
+        problems.append("run_id required")
+    env = report.get("environment", {})
+    if not isinstance(env, dict):
+        env = {}
+    for field in ENV_FIELDS:
+        if not nonempty(env.get(field)):
+            problems.append(f"environment.{field}: required")
+    if env.get("runsc_platform") not in ("systrap", "kvm", "ptrace"):
+        problems.append("environment.runsc_platform: expected systrap, kvm or ptrace")
+    if not re.fullmatch(r"(?:[^\s@]+@)?sha256:[0-9a-f]{64}", env.get("image_pin") or ""):
+        problems.append("environment.image_pin: immutable pin required")
+    preflight = report.get("preflight", {})
+    if not isinstance(preflight, dict):
+        preflight = {}
+    if preflight.get("verdict") != "ready_for_manual_matrix_not_go":
+        problems.append("preflight is not ready")
+    evidence(preflight.get("evidence"), "preflight")
+    rows = report.get("cases", [])
+    if not isinstance(rows, list):
+        rows = []
+    ids = [row.get("id") for row in rows if isinstance(row, dict)]
+    if len(ids) != 10 or sorted(str(key) for key in ids) != sorted(CASES):
+        problems.append("exactly one row for each E01–E10 is required")
+    failed = False
+    for number, row in enumerate(rows):
+        label = f"case[{number}]"
+        if not isinstance(row, dict):
+            problems.append(f"{label}: invalid row")
+            continue
+        status = row.get("status")
+        failed |= status == "fail"
+        if status not in ("pass", "fail"):
+            problems.append(f"{label}: not executed")
+            continue
+        for field in ("command", "expected", "observed"):
+            if not nonempty(row.get(field)):
+                problems.append(f"{label}.{field}: required")
+        if type(row.get("exit_code")) is not int:
+            problems.append(f"{label}: integer exit_code required")
+        # Resource-limit tests can legitimately pass with a nonzero exit status.
+        try:
+            if instant(row.get("finished_at")) < instant(row.get("started_at")):
+                raise ValueError("reversed interval")
+        except ValueError:
+            problems.append(f"{label}: invalid start/end timestamps")
+        if not nonempty(row.get("claude_before")) or not (
+            row["claude_before"] == row.get("claude_after") == env.get("claude")
+        ):
+            problems.append(f"{label}: Claude version missing or changed; rerun required")
+        evidence(row.get("evidence"), label)
+    cleanup = report.get("cleanup", {})
+    if not isinstance(cleanup, dict):
+        cleanup = {}
+    if cleanup.get("status") != "verified":
+        problems.append("cleanup not verified")
+    evidence(cleanup.get("evidence"), "cleanup")
+    status = "incomplete" if problems else "failures_recorded" if failed else "ready_for_review"
+    return {"status": status, "problems": problems,
+            "runtime_go": False, "note": "Evidence completeness only; human runtime review still required."}, (2 if problems else 1 if failed else 0)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("--init", type=Path, metavar="REPORT")
+    action.add_argument("--check", type=Path, metavar="REPORT")
+    args = parser.parse_args()
+    try:
+        if args.init:
+            # Exclusive creation preserves evidence from earlier runs.
+            with args.init.open("x", encoding="utf-8") as output:
+                json.dump(template(), output, indent=2, ensure_ascii=False)
+                output.write("\n")
+            print("Created unexecuted report; all E01–E10 are not_run.")
+            return 0
+        report = json.loads(args.check.read_text(encoding="utf-8"))
+        result, code = check(report, args.check.parent)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return code
+    except (OSError, ValueError, TypeError):
+        # Do not echo report content or error text that may contain secrets.
+        [REDACTED] read/create/validate report"}')
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

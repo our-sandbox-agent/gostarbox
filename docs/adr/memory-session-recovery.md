@@ -15,13 +15,20 @@ recovery contract instead of continuing until every exhaustion scenario survives
 Evidence: `docs/research/gvisor-m0-memory-results-20260927.md`. Historical E08
 remains a resource-enforcement pass; this ADR does not relabel it as session survival.
 
-## 1. Detection
+## 1. Detection and cgroup generation
 
-Persist container ID/generation, runtime, timestamp and cgroup memory-event baseline
-before starting work. Observe task-exit/OOM events and reconcile Docker State with
+Persist container ID/generation, container StartedAt, cgroup instance identity
+(path **and inode/creation interval**), runtime, timestamp and memory-event baseline
+before starting work. Continuously subscribe to the live instance's counters and
+persist OOM observations **before any restart**. Observe task-exit/OOM events and reconcile Docker State with
 the same generation. Classify `memory_limit_terminated` only when the container is
 actually stopped, exit 137 and OOMKilled=true; correlate oom_kill delta/kernel or
-runtime event if available. Exit 137 alone is not sufficient. Counter loss is
+runtime event if available. A recreated cgroup at the same path starts counters
+at zero: its values and any cross-generation delta are **not evidence about the
+dead instance**. The original runsc-data trace demonstrates 1 → removed → 0 after
+Docker start. If the old subscription is lost, use timestamp/container-correlated
+kernel journal (`constraint=CONSTRAINT_MEMCG`) and Docker OOM/task-exit events;
+record attribution as incomplete if those are unavailable. Exit 137 alone is not sufficient. Counter loss is
 explicitly recorded, never silently treated as zero. Running+OOMKilled=true can
 mean an individual child was killed (observed in runc); do not restart that live
 sandbox solely because of the flag. Unknown deaths stay unknown and raise an incident.
@@ -30,6 +37,13 @@ Keep PID failure separate: stopped/exit 2/non-OOM with matching clone-panic log.
 Freeze further exec and preserve attribution before any restart. Capacity is
 released only after confirming the old instance stopped/fenced (#19), not because
 a client connection failed.
+
+The recorded victim is `gvisor_sentry`: the host kernel enforces the **container's
+256 MiB memory cgroup**, not machine-wide memory exhaustion. The VM retained more
+than 7 GiB available memory in the original matrix. Killing the Sentry removes
+the guest processes it hosts; runc's separate allocator child can instead die
+while other processes remain. This is runtime failure containment, not proof
+that increasing VM RAM repairs the container-boundary behavior.
 
 ## 2. Notification
 
@@ -61,7 +75,7 @@ with the same validated resource policy, and require a bounded exec health check
 before marking ready. Do not automatically increase quota or invoke a paid model.
 
 Rate-limit restart attempts to one per 60 seconds; three failures within ten
-minutes place the sandbox in a visible recovery-blocked state requiring operator
+minutes leave `observed_state=Error`, `error.code=recovery_retry_exhausted`, requiring operator
 review. These are proposed control-plane values, not implemented behavior or
 measured production guarantees. An auto-restart option requires a separate explicit
 product decision and must retain fencing, bounded retries and visible notification.
@@ -69,6 +83,32 @@ product decision and must retain fencing, bounded retries and visible notificati
 Claude session-ID reconnection is **unverified** until paid E05/E10. Keeping files
 does not prove a Claude process resumes. New tmux/session must be created after
 restart; the previous tmux was absent in every terminated runsc case.
+
+## Mapping to the lifecycle contract
+
+Use the existing [sandbox lifecycle ADR](sandbox-lifecycle.md), not a parallel
+state machine. Known memory termination is `observed_state=Error` with
+`error.code=memory_limit_terminated`, `last_confirmed_state` and residual resources.
+`recovery-blocked` is not a new state: the exhausted-retry code above appears in
+the existing GET `error{code, resources[]}` and operation retryability fields.
+Unknown old-instance status is Lost and must be fenced/reconciled before retry.
+
+After reconciliation confirms the dead instance stopped, explicit restart uses
+`POST /v1/sandboxes/{id}/state` with `{state: Active, expected_version}` and an
+Idempotency-Key. It creates one operation, enters Resuming and allocates a new
+generation/fencing token. Capacity, volumes and credentials must pass existing
+checks. Repeated keys return the same operation; version/conflicting operations
+return 409. HTTP 202 is pending, not recovery success: Active requires operation
+success and the new instance's health evidence. Late old-generation events cannot
+overwrite the new state.
+
+The proposed implementation contract **recreates an execution instance with the
+same approved volumes**. Writable rootfs data outside those volumes is not
+preserved. The experiment tested only `docker start` on the same container, which
+also retains its writable layer; it did not validate recreation, fencing, operation
+idempotency or the product API. These remain future #11/#19 tests. Unflushed
+application-buffer loss is a design assumption consistent with the preservation
+contract, not measured by the two fsynced marker files.
 
 ## Trial decision
 

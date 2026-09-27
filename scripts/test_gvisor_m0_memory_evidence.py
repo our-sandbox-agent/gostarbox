@@ -1,6 +1,9 @@
 import hashlib
 import importlib.util
 import json
+import subprocess
+import io
+import tarfile
 from pathlib import Path
 import unittest
 
@@ -54,7 +57,39 @@ class MemorySessionEvidenceTests(unittest.TestCase):
                         self.assertEqual(row['tmux_after'],0)
                     if row['mode']=='as-multi':
                         self.assertNotEqual(row['node_as_smoke']['exit'],0)
-        self.assertEqual(count,8)
+        self.assertEqual(count,16)
+
+    def test_measured_sources_are_reconstructable(self):
+        bundle=BASE/'review72'
+        commit=read(bundle/'memory-policy.json')['source_commit']
+        archive=tarfile.open(fileobj=io.BytesIO(subprocess.check_output(['git','-c','core.autocrlf=true','archive',commit],cwd=ROOT)))
+        for name in ['memory-source.json','source-manifest.json']:
+            for path,digest in read(bundle/name).items():
+                data=archive.extractfile(path).read()
+                self.assertEqual(hashlib.sha256(data).hexdigest(),digest,path)
+        for name in ['published-67-base','published-67-multi']:
+            bundle=BASE/name
+            for path,item in read(bundle/'source-recovery.json').items():
+                if 'git_commit' in item:
+                    data=subprocess.check_output(['git','show',item['git_commit']+':'+item['git_path']],cwd=ROOT)
+                    data=b''.join(line.replace(b'\n',b'\r\n') if i in item['crlf_line_numbers'] else line for i,line in enumerate(data.splitlines(keepends=True)))
+                else:
+                    data=(bundle/item['path']).read_bytes()
+                self.assertEqual(hashlib.sha256(data).hexdigest(),item['sha256'],path)
+
+    def test_restart_counters_belong_to_a_new_instance(self):
+        bundle=BASE/'review72'
+        for row in read(bundle/'results.json'):
+            if 'restarted_cgroup' not in row:
+                continue
+            old=row['cgroup_instance']
+            new=row['restarted_cgroup']
+            self.assertNotEqual(old['cgroup_inode'],new['inode'])
+            self.assertNotEqual(old['started_at'],new['started_at'])
+            self.assertIn('oom_kill 0',new['stats']['memory.events'])
+            samples=read(bundle/(row['runtime']+'-'+row['mode']+'-samples.json'))
+            for sample in samples:
+                self.assertEqual(sample['instance'],old)
 
     def test_scope_guard_never_becomes_runtime_go(self):
         spec=importlib.util.spec_from_file_location('report',ROOT/'scripts/gvisor-report.py')
