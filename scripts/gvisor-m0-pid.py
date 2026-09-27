@@ -19,25 +19,32 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--image', required=True)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--source-commit', required=True)
+    parser.add_argument('--shell-mode', choices=['interactive','noninteractive'], default='interactive')
+    parser.add_argument('--cpus', nargs='+', type=int, choices=[2,4], default=[2,4])
+    parser.add_argument('--guests', nargs='+', type=int, choices=[64,128], default=[64,128])
+    parser.add_argument('--kinds', nargs='+', choices=['threads','fork'], default=['threads','fork'])
     args = parser.parse_args()
     if not args.image.startswith('sha256:'):
         parser.error('immutable local image required')
     m = mod.Matrix(args)
     started = mod.now()
     rows = []
-    m.write('m0-policy.json', {'issue': 70, 'cpus': [2,4], 'guest_nproc': [64,128],
-        'host_formula': '2 * guest_nproc * (cpus + 1) + 64', 'memory': '2g',
+    m.write('m0-policy.json', {'issue': 70, 'cpus': args.cpus, 'guest_nproc': args.guests,
+        'source_commit': args.source_commit, 'source_transport': 'git archive', 'shell_mode': args.shell_mode,
+        'host_formula': '2 * guest_nproc + 128 (candidate, not capacity guarantee)', 'memory': '2g',
         'max_allocations': 272, 'concurrent_exec': 4, 'model_calls': 0})
     files = [Path(__file__), ROOT/'diagnostics/gvisor/probes/task-pressure.py', ROOT/'diagnostics/gvisor/probes/node-workload.cjs', ROOT/'package.json', ROOT/'package-lock.json']
-    m.write('m0-source.json', {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in files})
+    sources = files + [ROOT/'scripts'/name for name in ['gvisor-no-key-matrix.py','gvisor_redact.py','gvisor-publish-evidence.py','gvisor-report.py']]
+    m.write('m0-source.json', {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     try:
         for command in [['uname','-a'], ['docker','version'], ['runsc','--version'], ['cat','/etc/docker/daemon.json']]:
             m.command(command)
-        for cpu in [2,4]:
-            for guest in [64,128]:
-                for kind in ['threads','fork']:
+        for cpu in args.cpus:
+            for guest in args.guests:
+                for kind in args.kinds:
                     m.label = f'cpu{cpu}-n{guest}-{kind}'
-                    host = 2 * guest * (cpu + 1) + 64
+                    host = 2 * guest + 128
                     cid = m.create(m.label, cpu=str(cpu), memory='2g', pids=str(host), guest_pids=guest)
                     cg = m.cgroup(cid)
                     for path in files[1:]:
@@ -45,10 +52,14 @@ def main():
                     m.execute(cid, 'tmux', 'new-session', '-d', '-s', 'work', 'node /workspace/node-workload.cjs')
                     time.sleep(1)
                     samples = []
+                    phase = 'workload'
                     stop = threading.Event()
                     def sampling():
                         while not stop.is_set():
-                            samples.append(m.stats(cg))
+                            try:
+                                samples.append({**m.stats(cg), 'phase':phase})
+                            except OSError as error:
+                                samples.append({'at':time.monotonic(),'phase':phase,'error':repr(error)})
                             time.sleep(.005)
                     sampler = threading.Thread(target=sampling)
                     sampler.start()
@@ -61,12 +72,15 @@ def main():
                         shell_path = m.out / (m.label + '-shell.txt')
                         probe_path = m.out / (m.label + '-probe.txt')
                         with shell_path.open('w') as shell_out, probe_path.open('w') as probe_out:
-                            shell_cmd = m.docker + ['exec','-i',cid,'bash','--noprofile','--norc','-i']
+                            shell_cmd = m.docker + ['exec','-i',cid,'bash','--noprofile','--norc']
+                            if args.shell_mode == 'interactive':
+                                shell_cmd.append('-i')
                             shell = subprocess.Popen(shell_cmd, stdin=subprocess.PIPE, stdout=shell_out, stderr=subprocess.STDOUT, text=True, env=m.env)
                             shell.stdin.write('/bin/true; printf "SHELL_FORK_BEFORE=%s\\n" "$?"\n')
                             shell.stdin.flush()
                             time.sleep(.3)
                             command = m.docker + ['exec','-i',cid,'python3','/workspace/task-pressure.py',kind]
+                            phase = 'pressure'
                             m.log({'shell_command': shell_cmd, 'probe_command': command})
                             probe = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=probe_out, stderr=subprocess.STDOUT, text=True, env=m.env)
                             deadline = time.monotonic()+30
@@ -74,6 +88,9 @@ def main():
                                 if mod.available_mib() < 2048 or time.monotonic() > deadline:
                                     raise RuntimeError('pressure guard')
                                 time.sleep(.02)
+                            if '"event": "at_limit"' not in probe_path.read_text():
+                                raise RuntimeError('probe did not demonstrate quota rejection')
+                            phase = 'full'
                             # The already-running probe samples heartbeat: Docker cp itself
                             # may require runtime work and fail at the guest task limit.
                             try:
@@ -86,7 +103,15 @@ def main():
                                 return {'index':index,'exit':r.returncode,'stdout':r.stdout,'stderr':r.stderr}
                             with ThreadPoolExecutor(max_workers=4) as pool:
                                 row['full_exec'] = list(pool.map(concurrent_exec, range(4)))
+                            def management_exec(index):
+                                command = m.docker+['exec','--user','1001:1001',cid,'sh','-c','/bin/true && printf ADMIN_FORK_OK']
+                                r = subprocess.run(command,env=m.env,capture_output=True,text=True,timeout=20)
+                                return {'command':command,'index':index,'exit':r.returncode,'stdout':r.stdout,'stderr':r.stderr}
+                            with ThreadPoolExecutor(max_workers=4) as pool:
+                                row['management_exec'] = list(pool.map(management_exec,range(4)))
                             time.sleep(16)  # bash's bounded fork retry must finish while pressure is held.
+                            row['shell_exit_while_full'] = shell.poll()
+                            phase = 'recovery'
                             if probe.poll() is None:
                                 probe.stdin.write('release\n')
                                 probe.stdin.flush()
@@ -98,6 +123,7 @@ def main():
                             except BrokenPipeError:
                                 pass
                             shell.wait(timeout=10)
+                            row['shell_exit'] = shell.returncode
                         recovery = m.execute(cid,'sh','-c','printf RECOVERY_EXEC_OK',check=False)
                         row['recovery'] = {'exit':recovery.returncode,'stdout':recovery.stdout,'stderr':recovery.stderr}
                         row['tmux_after'] = m.execute(cid,'tmux','has-session','-t','work',check=False).returncode

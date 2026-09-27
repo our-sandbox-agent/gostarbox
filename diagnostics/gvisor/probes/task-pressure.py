@@ -9,7 +9,7 @@ import threading
 import time
 
 def emit(event, **values):
-    print(json.dumps({'event': event, **values}), flush=True)
+    print(json.dumps({'event': event, 'at': time.monotonic(), **values}), flush=True)
 
 def counts():
     processes = tasks = 0
@@ -23,13 +23,18 @@ def counts():
     return {'processes': processes, 'tasks': tasks}
 
 soft, hard = resource.getrlimit(resource.RLIMIT_NPROC)
+# Positive control: raising soft back to unchanged hard is permitted.
+resource.setrlimit(resource.RLIMIT_NPROC, (hard - 1, hard))
+resource.setrlimit(resource.RLIMIT_NPROC, (hard, hard))
+emit('soft_within_hard', restored=resource.getrlimit(resource.RLIMIT_NPROC))
 negative = {}
 for name, action in [('raise_soft', lambda: resource.setrlimit(resource.RLIMIT_NPROC, (hard + 1, hard))),
                      ('raise_hard', lambda: resource.setrlimit(resource.RLIMIT_NPROC, (hard + 1, hard + 1))),
                      ('uid_root', lambda: os.setuid(0)), ('uid_other', lambda: os.setuid(1001))]:
     try:
         action()
-        negative[name] = 'ALLOWED'
+        emit('unsafe_negative_control', name=name, uid=os.getuid())
+        raise SystemExit(3)
     except (OSError, ValueError) as error:
         negative[name] = {'type': type(error).__name__, 'errno': getattr(error, 'errno', None)}
 emit('negative', uid=os.getuid(), soft=soft, hard=hard, results=negative)
@@ -54,11 +59,16 @@ try:
             failure = {'type': type(error).__name__, 'errno': getattr(error, 'errno', None), 'message': str(error)}
             break
         time.sleep(.005)
+    if failure is None:
+        emit('bound_without_rejection', created=len(children) + len(threads))
+        raise SystemExit(4)
     emit('at_limit', failure=failure, created=len(children) + len(threads), **counts())
     beat = Path('/workspace/node-heartbeat')
     emit('heartbeat_before', value=beat.read_text() if beat.exists() else None)
+    emit('workers_before', value=Path('/workspace/worker-heartbeats').read_text())
     sys.stdin.readline()
     emit('heartbeat_full', value=beat.read_text() if beat.exists() else None)
+    emit('workers_full', value=Path('/workspace/worker-heartbeats').read_text())
 finally:
     stop.set()
     for thread in threads:
