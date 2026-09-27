@@ -1,0 +1,1242 @@
+I0926 19:07:20.621140       1 cli.go:275] **************** gVisor ****************
+I0926 19:07:20.621169       1 cli.go:276] Version release-20260921.0, go1.26.3, amd64, 4 CPUs, linux, PID 1, PPID 0, UID 0, GID 0
+D0926 19:07:20.621174       1 cli.go:277] Page size: 0x1000 (4096 bytes)
+I0926 19:07:20.621178       1 cli.go:278] Args: [runsc-sandbox --debug-log=/var/log/runsc-67/ --platform=systrap --systemd-cgroup=true --root=/var/run/docker/runtime-runc/moby --debug=true --log=/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/log.json --log-format=json --log-fd=3 --debug-log-fd=4 boot --bundle=/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 --gofer-mount-confs=lisafs:self,lisafs:none,lisafs:none,lisafs:none,lisafs:none,lisafs:none --apply-caps=true --setup-root --total-host-memory 8326336512 --cpu-num 2 --cpu-quota 200000 --cpu-period 100000 --total-memory 268435456 --io-fds=5 --io-fds=6 --io-fds=7 --io-fds=8 --io-fds=9 --io-fds=10 --dev-io-fd=-1 --gofer-filestore-fds=11 --mounts-fd=12 --start-sync-fd=13 --pin-ring-fd=14 --controller-fd=15 --spec-fd=16 --stdio-fds=17 --stdio-fds=18 --stdio-fds=19 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440]
+I0926 19:07:20.621188       1 config.go:558] Platform: systrap
+I0926 19:07:20.621194       1 config.go:559] RootDir: /var/run/docker/runtime-runc/moby
+I0926 19:07:20.621195       1 config.go:560] FileAccess: exclusive / Directfs: true / Overlay: root:self
+I0926 19:07:20.621198       1 config.go:561] Network: sandbox
+I0926 19:07:20.621201       1 config.go:562] UseCPUNums: false
+I0926 19:07:20.621202       1 config.go:564] Debug: true. Strace: false, max size: 1024, syscalls: 
+W0926 19:07:20.621204       1 config.go:567] --allow-suid is disabled, SUID/SGID bits on executables will be ignored.
+D0926 19:07:20.621206       1 config.go:585] Config.RootDir (--root): /var/run/docker/runtime-runc/moby
+D0926 19:07:20.621209       1 config.go:585] Config.Traceback (--traceback): system
+D0926 19:07:20.621211       1 config.go:585] Config.Debug (--debug): true
+D0926 19:07:20.621212       1 config.go:585] Config.LogFilename (--log): /run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/log.json
+D0926 19:07:20.621218       1 config.go:585] Config.LogFormat (--log-format): json
+D0926 19:07:20.621219       1 config.go:585] Config.DebugLog (--debug-log): /var/log/runsc-67/
+D0926 19:07:20.621221       1 config.go:585] Config.DebugToUserLog (--debug-to-user-log): false
+D0926 19:07:20.621222       1 config.go:585] Config.DebugCommand (--debug-command): (empty)
+D0926 19:07:20.621224       1 config.go:585] Config.PanicLog (--panic-log): (empty)
+D0926 19:07:20.621226       1 config.go:585] Config.CoverageReport (--coverage-report): (empty)
+D0926 19:07:20.621227       1 config.go:585] Config.DebugLogFormat (--debug-log-format): text
+D0926 19:07:20.621229       1 config.go:585] Config.FileAccess (--file-access): exclusive
+D0926 19:07:20.621231       1 config.go:585] Config.FileAccessMounts (--file-access-mounts): shared
+D0926 19:07:20.621232       1 config.go:585] Config.Overlay (--overlay): false
+D0926 19:07:20.621234       1 config.go:585] Config.Overlay2 (--overlay2): root:self
+D0926 19:07:20.621242       1 config.go:585] Config.FSGoferHostUDS (--fsgofer-host-uds): false
+D0926 19:07:20.621243       1 config.go:585] Config.HostUDS (--host-uds): none
+D0926 19:07:20.621251       1 config.go:585] Config.HostFifo (--host-fifo): none
+D0926 19:07:20.621253       1 config.go:585] Config.CharacterDevicePolicy (--character-device-policy): emulated-only
+D0926 19:07:20.621255       1 config.go:585] Config.HostSettings (--host-settings): check
+D0926 19:07:20.621258       1 config.go:585] Config.Network (--network): sandbox
+D0926 19:07:20.621259       1 config.go:585] Config.GoferNetworkNamespace (--gofer-network-namespace): null
+D0926 19:07:20.621262       1 config.go:585] Config.EnableRaw (--net-raw): false
+D0926 19:07:20.621265       1 config.go:585] Config.AllowPacketEndpointWrite (--allow-packet-socket-write): false
+D0926 19:07:20.621267       1 config.go:585] Config.AllowLiveTCPMigration (--allow-live-tcp-migration): true
+D0926 19:07:20.621268       1 config.go:585] Config.SignalUnkillablePolicy (--signal-unkillable-policy): none
+D0926 19:07:20.621270       1 config.go:585] Config.HostGSO (--gso): true
+D0926 19:07:20.621272       1 config.go:585] Config.GVisorGSO (--software-gso): true
+D0926 19:07:20.621274       1 config.go:585] Config.GVisorGRO (--gvisor-gro): false
+D0926 19:07:20.621275       1 config.go:585] Config.TXChecksumOffload (--tx-checksum-offload): false
+D0926 19:07:20.621277       1 config.go:585] Config.RXChecksumOffload (--rx-checksum-offload): true
+D0926 19:07:20.621278       1 config.go:585] Config.QDisc (--qdisc): fifo
+D0926 19:07:20.621281       1 config.go:585] Config.TBFRate (--qdisc-tbf-rate): 0
+D0926 19:07:20.621282       1 config.go:585] Config.TBFBurst (--qdisc-tbf-burst): 0
+D0926 19:07:20.621284       1 config.go:585] Config.LogPackets (--log-packets): false
+D0926 19:07:20.621286       1 config.go:585] Config.PCAP (--pcap-log): (empty)
+D0926 19:07:20.621287       1 config.go:585] Config.Platform (--platform): systrap
+D0926 19:07:20.621289       1 config.go:585] Config.PlatformDevicePath (--platform_device_path): (empty)
+D0926 19:07:20.621290       1 config.go:585] Config.MetricServer (--metric-server): (empty)
+D0926 19:07:20.621295       1 config.go:585] Config.SidecarReleaseEnforcementPolicy (--sidecar-release-enforcement-policy): IF_RELEASE_BUILD
+D0926 19:07:20.621299       1 config.go:585] Config.SidecarUsagePolicy (--sidecar-usage-policy): DEFAULT
+D0926 19:07:20.621301       1 config.go:585] Config.FinalMetricsLog (--final-metrics-log): (empty)
+D0926 19:07:20.621302       1 config.go:585] Config.ProfilingMetrics (--profiling-metrics): (empty)
+D0926 19:07:20.621304       1 config.go:585] Config.ProfilingMetricsLog (--profiling-metrics-log): (empty)
+D0926 19:07:20.621306       1 config.go:585] Config.ProfilingMetricsRate (--profiling-metrics-rate-us): 1000
+D0926 19:07:20.621310       1 config.go:585] Config.Strace (--strace): false
+D0926 19:07:20.621311       1 config.go:585] Config.StraceSyscalls (--strace-syscalls): (empty)
+D0926 19:07:20.621313       1 config.go:585] Config.StraceLogSize (--strace-log-size): 1024
+D0926 19:07:20.621316       1 config.go:585] Config.StraceEvent (--strace-event): false
+D0926 19:07:20.621318       1 config.go:587] Config.DisableSeccomp: false
+D0926 19:07:20.621320       1 config.go:585] Config.EnableCoreTags (--enable-core-tags): false
+D0926 19:07:20.621322       1 config.go:585] Config.WatchdogAction (--watchdog-action): log
+D0926 19:07:20.621323       1 config.go:585] Config.PanicSignal (--panic-signal): -1
+D0926 19:07:20.621325       1 config.go:585] Config.ProfileEnable (--profile): false
+D0926 19:07:20.621326       1 config.go:585] Config.ProfileBlock (--profile-block): (empty)
+D0926 19:07:20.621328       1 config.go:585] Config.ProfileCPU (--profile-cpu): (empty)
+D0926 19:07:20.621329       1 config.go:585] Config.ProfileGCInterval (--profile-gc-interval): 0s
+D0926 19:07:20.621332       1 config.go:585] Config.ProfileHeap (--profile-heap): (empty)
+D0926 19:07:20.621333       1 config.go:585] Config.ProfileMutex (--profile-mutex): (empty)
+D0926 19:07:20.621335       1 config.go:585] Config.TraceFile (--trace): (empty)
+D0926 19:07:20.621336       1 config.go:585] Config.NumNetworkChannels (--num-network-channels): 1
+D0926 19:07:20.621338       1 config.go:585] Config.NetworkProcessorsPerChannel (--network-processors-per-channel): 0
+D0926 19:07:20.621339       1 config.go:585] Config.Rootless (--rootless): false
+D0926 19:07:20.621341       1 config.go:585] Config.AlsoLogToStderr (--alsologtostderr): false
+D0926 19:07:20.621342       1 config.go:585] Config.ReferenceLeak (--ref-leak-mode): disabled
+D0926 19:07:20.621344       1 config.go:585] Config.CPUNumFromQuota (--cpu-num-from-quota): true
+D0926 19:07:20.621346       1 config.go:585] Config.AllowFlagOverride (--allow-flag-override): false
+D0926 19:07:20.621348       1 config.go:585] Config.OCISeccomp (--oci-seccomp): false
+D0926 19:07:20.621350       1 config.go:585] Config.IgnoreCgroups (--ignore-cgroups): false
+D0926 19:07:20.621351       1 config.go:585] Config.InSandboxCgroup (--in-sandbox-cgroup): v1
+D0926 19:07:20.621354       1 config.go:585] Config.SystemdCgroup (--systemd-cgroup): true
+D0926 19:07:20.621355       1 config.go:585] Config.PodInitConfig (--pod-init-config): (empty)
+D0926 19:07:20.621357       1 config.go:585] Config.XDP (--EXPERIMENTAL-xdp): {0 }
+D0926 19:07:20.621360       1 config.go:585] Config.AFXDPUseNeedWakeup (--EXPERIMENTAL-xdp-need-wakeup): true
+D0926 19:07:20.621362       1 config.go:585] Config.FDLimit (--fdlimit): -1
+D0926 19:07:20.621363       1 config.go:585] Config.DCache (--dcache): -1
+D0926 19:07:20.621365       1 config.go:585] Config.IOUring (--iouring): false
+D0926 19:07:20.621366       1 config.go:585] Config.DirectFS (--directfs): true
+D0926 19:07:20.621368       1 config.go:585] Config.AppHugePages (--app-huge-pages): true
+D0926 19:07:20.621369       1 config.go:585] Config.NVProxy (--nvproxy): false
+D0926 19:07:20.621371       1 config.go:585] Config.NVProxyDocker (--nvproxy-docker): false
+D0926 19:07:20.621374       1 config.go:585] Config.NVProxyDriverVersion (--nvproxy-driver-version): (empty)
+D0926 19:07:20.621376       1 config.go:585] Config.NVProxyAllowedDriverCapabilities (--nvproxy-allowed-driver-capabilities): utility,compute
+D0926 19:07:20.621377       1 config.go:585] Config.NVProxyAllowUnsupportedDriver (--nvproxy-allow-unsupported-driver): false
+D0926 19:07:20.621379       1 config.go:585] Config.TPUProxy (--tpuproxy): false
+D0926 19:07:20.621381       1 config.go:585] Config.RDMAProxy (--rdmaproxy): false
+D0926 19:07:20.621382       1 config.go:585] Config.TestOnlyAllowRunAsCurrentUserWithoutChroot (--TESTONLY-unsafe-nonroot): false
+D0926 19:07:20.621383       1 config.go:585] Config.TestOnlyTestNameEnv (--TESTONLY-test-name-env): (empty)
+D0926 19:07:20.621385       1 config.go:585] Config.TestOnlyAFSSyscallPanic (--TESTONLY-afs-syscall-panic): false
+D0926 19:07:20.621387       1 config.go:587] Config.explicitlySet: <map[string]struct {} Value> (unexported)
+D0926 19:07:20.621389       1 config.go:585] Config.ReproduceNAT (--reproduce-nat): false
+D0926 19:07:20.621390       1 config.go:585] Config.ReproduceNftables (--reproduce-nftables): false
+D0926 19:07:20.621392       1 config.go:585] Config.NetDisconnectOk (--net-disconnect-ok): true
+D0926 19:07:20.621393       1 config.go:585] Config.TestOnlyAutosaveImagePath (--TESTONLY-autosave-image-path): (empty)
+D0926 19:07:20.621395       1 config.go:585] Config.TestOnlyAutosaveResume (--TESTONLY-autosave-resume): false
+D0926 19:07:20.621397       1 config.go:585] Config.RestoreSpecValidation (--restore-spec-validation): enforce
+D0926 19:07:20.621398       1 config.go:585] Config.GVisorMarkerFile (--gvisor-marker-file): false
+D0926 19:07:20.621400       1 config.go:585] Config.OverrideProcs (--override-procs): (empty)
+D0926 19:07:20.621402       1 config.go:585] Config.SystrapDisableSyscallPatching (--systrap-disable-syscall-patching): false
+D0926 19:07:20.621403       1 config.go:585] Config.SystrapDisableFastPath (--systrap-disable-fast-path): false
+D0926 19:07:20.621405       1 config.go:585] Config.Nftables (--TESTONLY-nftables): false
+D0926 19:07:20.621406       1 config.go:585] Config.AllowSUID (--allow-suid): false
+D0926 19:07:20.621445       1 config.go:585] Config.UseCPUNums (--kvm-use-cpu-nums): false
+D0926 19:07:20.621448       1 config.go:585] Config.PauseExternalNetworking (--pause-external-networking): false
+D0926 19:07:20.621450       1 config.go:585] Config.AllowConnectedOnSave (--allow-connected-on-save): false
+D0926 19:07:20.621452       1 config.go:585] Config.AllowRootfsTarAnnotation (--allow-rootfs-tar-annotation): false
+D0926 19:07:20.621454       1 config.go:585] Config.ControlRPCStopTimeout (--control-rpc-stop-timeout): 15s
+D0926 19:07:20.621456       1 config.go:585] Config.SharedRootDir (--shared-root): (empty)
+D0926 19:07:20.621462       1 cli.go:284] runsc process spawned at 19:07:20.620034, Go started execution at 19:07:20.621013. Startup overhead: 978.771µs
+I0926 19:07:20.621466       1 cli.go:287] **************** gVisor ****************
+I0926 19:07:20.621471       1 gvisorbinaries.go:180] [Sidecar release match check] Build label "release-20260921.0" matches the expected release in sidecar "gvisor_sentry".
+I0926 19:07:20.621477       1 timing.go:439] Timer for runsc boot: Starting.
+D0926 19:07:20.621485       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint Go code running at 19:07:20.621013718 (unix nanos: 1790449640621013718)
+D0926 19:07:20.621488       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint boot subcommand dispatched at 19:07:20.621488082 (unix nanos: 1790449640621488082)
+D0926 19:07:20.621668       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint CPUID initialized at 19:07:20.621668086 (unix nanos: 1790449640621668086)
+D0926 19:07:20.621671       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint ring0 initialized at 19:07:20.621671099 (unix nanos: 1790449640621671099)
+I0926 19:07:20.621694       1 boot.go:373] Setting product_name: "Virtual Machine"
+I0926 19:07:20.621721       1 boot.go:384] Setting host-thp-shmem-enabled: "never"
+I0926 19:07:20.621732       1 boot.go:394] Setting host-thp-defrag: "madvise"
+D0926 19:07:20.621735       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint host info read at 19:07:20.621734881 (unix nanos: 1790449640621734881)
+W0926 19:07:20.622156       1 specutils.go:169] AppArmor profile "docker-default" is being ignored
+D0926 19:07:20.622170       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint spec read at 19:07:20.622170113 (unix nanos: 1790449640622170113)
+I0926 19:07:20.622172       1 chroot.go:142] Setting up sandbox chroot in "/tmp"
+D0926 19:07:20.622260       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint chroot base mounted at 19:07:20.622260163 (unix nanos: 1790449640622260163)
+I0926 19:07:20.622274       1 chroot.go:41] Mounting "proc" at "/tmp/proc/sandbox-proc"
+D0926 19:07:20.622291       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint chroot proc mounted at 19:07:20.622291271 (unix nanos: 1790449640622291271)
+D0926 19:07:20.622331       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint chroot procfs set up at 19:07:20.622331309 (unix nanos: 1790449640622331309)
+D0926 19:07:20.622336       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint chroot sealed read-only at 19:07:20.622336370 (unix nanos: 1790449640622336370)
+D0926 19:07:20.622367       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint chroot set up at 19:07:20.622366970 (unix nanos: 1790449640622366970)
+D0926 19:07:20.622794       1 specutils.go:137] Spec:
+{
+  "ociVersion": "1.3.0",
+  "process": {
+    "user": {
+      "uid": 1000,
+      "gid": 1000,
+      "additionalGids": [
+        1000
+      ]
+    },
+    "args": [
+      "docker-entrypoint.sh",
+      "sleep",
+      "infinity"
+    ],
+    "cwd": "/workspace",
+    "capabilities": {},
+    "noNewPrivileges": true,
+    "apparmorProfile": "docker-default",
+    "oomScoreAdj": 0
+  },
+  "root": {
+    "path": "/var/lib/docker/rootfs/overlayfs/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440"
+  },
+  "hostname": "8bc9b59dc3d0",
+  "mounts": [
+    {
+      "destination": "/proc",
+      "type": "proc",
+      "source": "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/proc",
+      "options": [
+        "nosuid",
+        "noexec",
+        "nodev"
+      ]
+    },
+    {
+      "destination": "/dev",
+      "type": "tmpfs",
+      "source": "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/tmpfs",
+      "options": [
+        "nosuid",
+        "strictatime",
+        "mode=755",
+        "size=65536k"
+      ]
+    },
+    {
+      "destination": "/dev/pts",
+      "type": "devpts",
+      "source": "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/devpts",
+      "options": [
+        "nosuid",
+        "noexec",
+        "newinstance",
+        "ptmxmode=0666",
+        "mode=0620",
+        "gid=5"
+      ]
+    },
+    {
+      "destination": "/sys",
+      "type": "sysfs",
+      "source": "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/sysfs",
+      "options": [
+        "nosuid",
+        "noexec",
+        "nodev",
+        "ro"
+      ]
+    },
+    {
+      "destination": "/sys/fs/cgroup",
+      "type": "cgroup",
+      "source": "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/cgroup",
+      "options": [
+        "ro",
+        "nosuid",
+        "noexec",
+        "nodev"
+      ]
+    },
+    {
+      "destination": "/dev/mqueue",
+      "type": "mqueue",
+      "source": "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/mqueue",
+      "options": [
+        "nosuid",
+        "noexec",
+        "nodev"
+      ]
+    },
+    {
+      "destination": "/dev/shm",
+      "type": "tmpfs",
+      "source": "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/shm",
+      "options": [
+        "nosuid",
+        "noexec",
+        "nodev",
+        "mode=1777",
+        "size=67108864"
+      ]
+    },
+    {
+      "destination": "/workspace",
+      "type": "bind",
+      "source": "/var/lib/docker/volumes/spike-84f7507b-runsc-none-workspace/_data",
+      "options": [
+        "rbind"
+      ]
+    },
+    {
+      "destination": "/etc/hostname",
+      "type": "bind",
+      "source": "/var/lib/docker/containers/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/hostname",
+      "options": [
+        "rbind",
+        "rprivate"
+      ]
+    },
+    {
+      "destination": "/etc/hosts",
+      "type": "bind",
+      "source": "/var/lib/docker/containers/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/hosts",
+      "options": [
+        "rbind",
+        "rprivate"
+      ]
+    },
+    {
+      "destination": "/etc/resolv.conf",
+      "type": "bind",
+      "source": "/var/lib/docker/containers/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/resolv.conf",
+      "options": [
+        "rbind",
+        "rprivate"
+      ]
+    },
+    {
+      "destination": "/home/node",
+      "type": "bind",
+      "source": "/var/lib/docker/volumes/spike-84f7507b-runsc-none-home/_data",
+      "options": [
+        "rbind"
+      ]
+    }
+  ],
+  "linux": {
+    "sysctl": {
+      "net.ipv4.ip_unprivileged_port_start": "0",
+      "net.ipv4.ping_group_range": "0 2147483647"
+    },
+    "resources": {
+      "memory": {
+        "limit": 268435456,
+        "swap": 268435456
+      },
+      "cpu": {
+        "quota": 200000,
+        "period": 100000
+      },
+      "pids": {
+        "limit": 512
+      },
+      "blockIO": {}
+    },
+    "cgroupsPath": "system.slice:docker:8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440",
+    "namespaces": [
+      {
+        "type": "mount"
+      },
+      {
+        "type": "network"
+      },
+      {
+        "type": "time"
+      },
+      {
+        "type": "uts"
+      },
+      {
+        "type": "pid"
+      },
+      {
+        "type": "ipc"
+      },
+      {
+        "type": "cgroup"
+      }
+    ]
+  }
+}
+D0926 19:07:20.622815       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint sandbox capabilities computed at 19:07:20.622814550 (unix nanos: 1790449640622814550)
+D0926 19:07:20.622852       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint current capabilities read at 19:07:20.622852104 (unix nanos: 1790449640622852104)
+D0926 19:07:20.623773       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint bounding set trimmed on all threads at 19:07:20.623772197 (unix nanos: 1790449640623772197)
+D0926 19:07:20.623798       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint capset applied on all threads at 19:07:20.623797992 (unix nanos: 1790449640623797992)
+I0926 19:07:20.623817       1 caps_unsafe.go:163] Capabilities applied to all threads: bounding=0x8001f effective=0x8001f permitted=0x8001f inheritable=0x0 ambient=0x0
+D0926 19:07:20.623821       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint capabilities applied at 19:07:20.623821039 (unix nanos: 1790449640623821039)
+D0926 19:07:20.623865       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint resolved mounts read at 19:07:20.623853448 (unix nanos: 1790449640623853448)
+D0926 19:07:20.626366       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint seccheck initialized at 19:07:20.626364775 (unix nanos: 1790449640626364775)
+D0926 19:07:20.626382       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint RNG initialized at 19:07:20.626381800 (unix nanos: 1790449640626381800)
+D0926 19:07:20.626398       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint memory usage initialized at 19:07:20.626398547 (unix nanos: 1790449640626398547)
+I0926 19:07:20.626402       1 loader.go:661] CPUs: 2
+D0926 19:07:20.626407       1 gomaxprocs.go:76] Setting GOMAXPROCS to 2
+D0926 19:07:20.626479       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint GOMAXPROCS set at 19:07:20.626477230 (unix nanos: 1790449640626477230)
+I0926 19:07:20.626494       1 loader.go:713] Remapped stdio FDs to [253, 255] in 3.847µs
+D0926 19:07:20.626500       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint donated FDs ingested at 19:07:20.626499946 (unix nanos: 1790449640626499946)
+I0926 19:07:20.626502       1 loader.go:1116] Platform: systrap
+D0926 19:07:20.626542       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint systrap memory file created at 19:07:20.626542063 (unix nanos: 1790449640626542063)
+D0926 19:07:20.626769       1 seccomp.go:802] Ordered seccomp rules:
+D0926 19:07:20.626772       1 seccomp.go:812]   Hot non-trivial syscalls: None.
+D0926 19:07:20.626774       1 seccomp.go:815]   Cold non-trivial syscalls:
+D0926 19:07:20.626784       1 seccomp.go:822]     - Syscall   15: (rip > 0x7faa32218000) => allow
+D0926 19:07:20.626787       1 seccomp.go:822]     - Syscall   24: (rip > 0x7faa32218000) => allow
+D0926 19:07:20.626788       1 seccomp.go:822]     - Vsyscall  96: trap
+D0926 19:07:20.626793       1 seccomp.go:822]     - Syscall  158: ((arg[0].high == 0 && (arg[0].low == 0x1002 || arg[0].low == 0x1003) && rip > 0x7faa32217000)) => allow
+D0926 19:07:20.626794       1 seccomp.go:822]     - Vsyscall 201: trap
+D0926 19:07:20.626800       1 seccomp.go:822]     - Syscall  202: ((arg[0] > 0x7faa32218000 && arg[1].high == 0 && arg[3] == 0 && arg[4] == 0 && arg[5] == 0 && rip > 0x7faa32218000 && ((arg[1].low == 0x1 && arg[2] == 0x1) || arg[1].low == 0))) => allow
+D0926 19:07:20.626801       1 seccomp.go:822]     - Vsyscall 309: trap
+D0926 19:07:20.626802       1 seccomp.go:812]   Trivial syscalls: None.
+D0926 19:07:20.626803       1 seccomp.go:825] End of ordered seccomp rules.
+D0926 19:07:20.627137       1 seccomp.go:529] Seccomp program optimized from 262 to 72 instructions; took 229.008µs to build and 142.903µs to optimize
+D0926 19:07:20.627166       1 seccomp.go:802] Ordered seccomp rules:
+D0926 19:07:20.627168       1 seccomp.go:812]   Hot non-trivial syscalls: None.
+D0926 19:07:20.627169       1 seccomp.go:812]   Cold non-trivial syscalls: None.
+D0926 19:07:20.627170       1 seccomp.go:815]   Trivial syscalls:
+D0926 19:07:20.627172       1 seccomp.go:822]     - Syscall  231: unotify
+D0926 19:07:20.627173       1 seccomp.go:825] End of ordered seccomp rules.
+D0926 19:07:20.627188       1 seccomp.go:529] Seccomp program optimized from 13 to 6 instructions; took 18.184µs to build and 5.013µs to optimize
+D0926 19:07:20.627199       1 stub_unsafe.go:340] stubStart 7faa32217000 stubSysmsgStart 7faa32218000 stubSysmsgStack 7fe1f64c8000, stubContextQueue 7fe1f64e7000, stubThreadContextRegion 7fe1f64f1000, mapLen 1031000
+D0926 19:07:20.627213       1 stub_unsafe.go:341] sysmsg.ArchState{ xsaveMode 2 fsgsbase 1 fpLen 832 }
+D0926 19:07:20.627216       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint systrap stub initialized at 19:07:20.627215507 (unix nanos: 1790449640627215507)
+D0926 19:07:20.627480       1 seccomp.go:802] Ordered seccomp rules:
+D0926 19:07:20.627482       1 seccomp.go:812]   Hot non-trivial syscalls: None.
+D0926 19:07:20.627483       1 seccomp.go:815]   Cold non-trivial syscalls:
+D0926 19:07:20.627489       1 seccomp.go:822]     - Syscall   56: ((arg[0].high == 0 && (arg[0].low == 0x8411 || arg[0].low == 0x411 || arg[0].low == 0x2709))) => allow
+D0926 19:07:20.627491       1 seccomp.go:822]     - Syscall   62: (arg[1] == 0x13) => allow
+D0926 19:07:20.627492       1 seccomp.go:822]     - Vsyscall  96: trap
+D0926 19:07:20.627498       1 seccomp.go:822]     - Syscall  157: ((arg[0].high == 0 && arg[1].high == 0 && ((arg[0].low == 0x1 && arg[1].low == 0x9) || (arg[0].low == 0x26 && arg[1].low == 0x1) || (arg[0].low == 0x3b && arg[1].low == 0x1 && arg[2] == 0x7faa32217000 && arg[3] == 0x6000)))) => allow
+D0926 19:07:20.627501       1 seccomp.go:822]     - Syscall  158: ((arg[0].high == 0 && ((arg[0].low == 0x1012 && arg[1] == 0) || arg[0].low == 0x1002 || arg[0].low == 0x1003))) => allow
+D0926 19:07:20.627502       1 seccomp.go:822]     - Syscall  200: (arg[1] == 0x13) => allow
+D0926 19:07:20.627503       1 seccomp.go:822]     - Vsyscall 201: trap
+D0926 19:07:20.627505       1 seccomp.go:822]     - Syscall  202: ((arg[1].high == 0 && (arg[1].low == 0 || arg[1].low == 0x1))) => allow
+D0926 19:07:20.627507       1 seccomp.go:822]     - Vsyscall 309: trap
+D0926 19:07:20.627509       1 seccomp.go:822]     - Syscall  317: ((arg[0] == 0x1 && arg[1].high == 0 && (arg[1].low == 0 || arg[1].low == 0x8))) => allow
+D0926 19:07:20.627510       1 seccomp.go:815]   Trivial syscalls:
+D0926 19:07:20.627515       1 seccomp.go:822]     - Syscall    9: allow
+D0926 19:07:20.627516       1 seccomp.go:822]     - Syscall   11: allow
+D0926 19:07:20.627517       1 seccomp.go:822]     - Syscall   15: allow
+D0926 19:07:20.627518       1 seccomp.go:822]     - Syscall   24: allow
+D0926 19:07:20.627519       1 seccomp.go:822]     - Syscall   39: allow
+D0926 19:07:20.627520       1 seccomp.go:822]     - Syscall   60: allow
+D0926 19:07:20.627521       1 seccomp.go:822]     - Syscall   61: allow
+D0926 19:07:20.627522       1 seccomp.go:822]     - Syscall  110: allow
+D0926 19:07:20.627523       1 seccomp.go:822]     - Syscall  131: allow
+D0926 19:07:20.627524       1 seccomp.go:822]     - Syscall  186: allow
+D0926 19:07:20.627525       1 seccomp.go:822]     - Syscall  231: allow
+D0926 19:07:20.627526       1 seccomp.go:825] End of ordered seccomp rules.
+D0926 19:07:20.628200       1 seccomp.go:529] Seccomp program optimized from 453 to 107 instructions; took 449.947µs to build and 278.51µs to optimize
+D0926 19:07:20.629106       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint systrap source process created at 19:07:20.629101045 (unix nanos: 1790449640629101045)
+D0926 19:07:20.629127       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint waiting for membarrier at 19:07:20.629126803 (unix nanos: 1790449640629126803)
+D0926 19:07:20.629131       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint host membarrier probed at 19:07:20.629130951 (unix nanos: 1790449640629130951)
+D0926 19:07:20.629133       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint platform created at 19:07:20.629133140 (unix nanos: 1790449640629133140)
+I0926 19:07:20.629144       1 loader.go:1147] Disabling application huge pages: host shmem_enabled is "never"
+D0926 19:07:20.629157       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint memory file created at 19:07:20.629157116 (unix nanos: 1790449640629157116)
+D0926 19:07:20.629178       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint VDSO prepared at 19:07:20.629178064 (unix nanos: 1790449640629178064)
+D0926 19:07:20.629200       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint timekeeper configured at 19:07:20.629200178 (unix nanos: 1790449640629200178)
+D0926 19:07:20.629317       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint network stack created at 19:07:20.629316681 (unix nanos: 1790449640629316681)
+I0926 19:07:20.629319       1 loader.go:817] Setting total memory to 0.25 GB
+D0926 19:07:20.629429       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint kernel initialized at 19:07:20.629429030 (unix nanos: 1790449640629429030)
+D0926 19:07:20.629441       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint filesystems registered at 19:07:20.629441246 (unix nanos: 1790449640629441246)
+I0926 19:07:20.629443       1 loader.go:884] Packet logging disabled
+I0926 19:07:20.629452       1 watchdog.go:184] Watchdog waiting 30s for startup
+W0926 19:07:20.629465       1 limits.go:104] Host limit is lower than recommended, resource: "RLIMIT_NOFILE", host: 524287, recommended: 1048576
+I0926 19:07:20.629469       1 limits.go:107] Setting limit from host, resource: "RLIMIT_NOFILE" {soft: 524287, hard: 524288}
+D0926 19:07:20.629474       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint process args created at 19:07:20.629473465 (unix nanos: 1790449640629473465)
+D0926 19:07:20.629478       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint compat logs initialized at 19:07:20.629476539 (unix nanos: 1790449640629476539)
+D0926 19:07:20.629480       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint mount hints parsed at 19:07:20.629480408 (unix nanos: 1790449640629480408)
+D0926 19:07:20.629482       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint host FS mount created at 19:07:20.629482717 (unix nanos: 1790449640629482717)
+D0926 19:07:20.629776       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint control server started at 19:07:20.629775134 (unix nanos: 1790449640629775134)
+D0926 19:07:20.629785       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint loader created at 19:07:20.629784892 (unix nanos: 1790449640629784892)
+D0926 19:07:20.629808       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint metrics initialized at 19:07:20.629808402 (unix nanos: 1790449640629808402)
+D0926 19:07:20.629810       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint notifying parent at 19:07:20.629810634 (unix nanos: 1790449640629810634)
+D0926 19:07:20.668039       1 urpc.go:424] urpc: registering client with FD 13
+D0926 19:07:20.668187       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.668195       1 urpc.go:304] urpc: handling RPC call for method containerManager.ContainerRuntimeState
+D0926 19:07:20.668218       1 controller.go:1202] containerManager.ContainerRuntimeState: cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440
+D0926 19:07:20.668237       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.668240       1 urpc.go:374] urpc: RPC call for method containerManager.ContainerRuntimeState succeeded.
+D0926 19:07:20.668266       1 urpc.go:435] urpc: unregistering client with FD 13
+D0926 19:07:20.668968       1 urpc.go:424] urpc: registering client with FD 13
+D0926 19:07:20.669327       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.669341       1 urpc.go:304] urpc: handling RPC call for method containerManager.SetNetworkArgs
+D0926 19:07:20.669472       1 controller.go:1259] containerManager.SetNetworkArgs
+D0926 19:07:20.669487       1 urpc.go:600] urpc: successfully marshalled 37 bytes.
+D0926 19:07:20.669494       1 urpc.go:374] urpc: RPC call for method containerManager.SetNetworkArgs succeeded.
+D0926 19:07:20.669525       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.669527       1 urpc.go:304] urpc: handling RPC call for method containerManager.StartRoot
+D0926 19:07:20.669532       1 controller.go:299] containerManager.StartRoot, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440
+D0926 19:07:20.669544       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint start signal received at 19:07:20.669542643 (unix nanos: 1790449640669542643)
+I0926 19:07:20.669552       1 network.go:322] Enabling loopback interface "lo" with id 1 on addresses [127.0.0.1/8 ::1/128]
+I0926 19:07:20.669653       1 network.go:406] Enabling FIFO QDisc on "eth0"
+I0926 19:07:20.669673       1 network.go:417] Enabling interface "eth0" with id 2 on addresses [172.17.0.2/16] (8e:7d:74:fd:a7:d0) w/ 1 channels
+I0926 19:07:20.669718       1 network.go:565] Setting routes [127.0.0.0/8 nic 1 ::1/128 nic 1 0.0.0.0/0 via 172.17.0.1 nic 2 172.17.0.0/16 nic 2]
+D0926 19:07:20.669733       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint network configured at 19:07:20.669732709 (unix nanos: 1790449640669732709)
+D0926 19:07:20.669737       1 pinring.go:95] Pin ring: finalizing with 1 FDs (ring at FD 14)
+D0926 19:07:20.669851       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint open FDs validated at 19:07:20.669850733 (unix nanos: 1790449640669850733)
+D0926 19:07:20.670577       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint pre-seccomp callback done at 19:07:20.670575622 (unix nanos: 1790449640670575622)
+W0926 19:07:20.670587       1 filter.go:43] *** SECCOMP WARNING: host filesystem enabled: syscall filters less restrictive!
+D0926 19:07:20.670615       1 filter.go:49] Loaded precompiled seccomp instructions for options GOARCH="amd64" Platform="systrap" HostNetwork=false HostNetworkRawSockets=false HostFilesystem=true ProfileEnable=false Instrumentation=false NVProxy=false NVProxyCaps= TPUProxy=false RDMAProxy=false CgoEnabled=false PluginNetwork=false, using variables: map[controller_fd:15 self_pid_high32bits:0 self_pid_low32bits:1 systrap_sysmsg_thread_priority_high32bits:0 systrap_sysmsg_thread_priority_low32bits:1]
+D0926 19:07:20.670631       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint precompiled seccomp program rendered at 19:07:20.670630905 (unix nanos: 1790449640670630905)
+D0926 19:07:20.670771       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint seccomp filters installed at 19:07:20.670770471 (unix nanos: 1790449640670770471)
+D0926 19:07:20.670775       1 timing.go:167] Timer for runsc boot: Timeline runsc boot forked into child timeline runsc boot/root container at 19:07:20.670773708 (unix nanos: 1790449640670773708)
+D0926 19:07:20.670814       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint FD table created at 19:07:20.670814554 (unix nanos: 1790449640670814554)
+I0926 19:07:20.670821       1 vfs.go:1549] Setting cgroupfs cpu defaults: quota=200000, period=100000 (raw quota=200000, raw period=100000)
+D0926 19:07:20.670836       1 cgroupfs.go:337] cgroupfs.FilesystemType.GetFilesystem: default control values: map[cpu.cfs_period_us:100000 cpu.cfs_quota_us:200000]
+I0926 19:07:20.670915       1 vfs.go:1556] Setting cgroupfs memory defaults: limit=268435456 bytes (0.25 GB)
+D0926 19:07:20.670921       1 cgroupfs.go:337] cgroupfs.FilesystemType.GetFilesystem: default control values: map[memory.limit_in_bytes:268435456]
+I0926 19:07:20.670936       1 vfs.go:1582] created cgroup mounts for controllers [cpu cpuacct cpuset devices job memory pids]
+D0926 19:07:20.670940       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint cgroups mounted at 19:07:20.670940206 (unix nanos: 1790449640670940206)
+I0926 19:07:20.670946       1 vfs.go:567] Configuring container's file system
+I0926 19:07:20.670956       1 vfs.go:663] Mounting root with 9p, ioFD: 5
+I0926 19:07:20.670958       1 vfs.go:666] Adding overlay on top of root
+D0926 19:07:20.670975       1 client.go:395] send [sockComm 5] MountReq{}
+D0926 19:07:20.671205       1 client.go:395] recv [sockComm 5] MountResp{Root: Inode{ControlFD: 1, Stat: Statx{Mask: 0x1fff, Mode: S_IFDIR|0o755, UID: 0, GID: 0, Ino: 3045625, DevMajor: 0, DevMinor: 47, Size: 4096, Blocks: 8, Blksize: 4096, Nlink: 1, Atime: 2026-09-26 19:07:18.382941463 +0000 UTC, Btime: 2026-09-26 19:07:18.382941463 +0000 UTC, Ctime: 2026-09-26 19:07:20.614034696 +0000 UTC, Mtime: 2026-09-26 19:07:20.614034696 +0000 UTC, Attributes: 0, AttributesMask: 0, RdevMajor: 0, RdevMinor: 0}}, MaxMessageSize: 2093056, SupportedMs: [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 21 22 23 24 25 26 27 28 29 30 31 32 33]}
+D0926 19:07:20.671287       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint rootfs mounted at 19:07:20.671286579 (unix nanos: 1790449640671286579)
+D0926 19:07:20.671296       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint submounts prepared at 19:07:20.671295783 (unix nanos: 1790449640671295783)
+D0926 19:07:20.671299       1 vfs.go:875] Mounting "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/tmpfs" to "/dev", type: dev, options: [nosuid strictatime mode=755 size=65536k]
+W0926 19:07:20.671304       1 vfs.go:1210] ignoring unknown mount option "strictatime"
+W0926 19:07:20.671306       1 vfs.go:1210] ignoring unknown mount option "mode=755"
+W0926 19:07:20.671308       1 vfs.go:1210] ignoring unknown mount option "size=65536k"
+I0926 19:07:20.671405       1 vfs.go:1065] Mounted "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/tmpfs" to "/dev" type: dev, internal-options: ""
+D0926 19:07:20.671411       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/dev" at 19:07:20.671410757 (unix nanos: 1790449640671410757)
+D0926 19:07:20.671413       1 vfs.go:875] Mounting "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/sysfs" to "/sys", type: sysfs, options: [nosuid noexec nodev ro]
+W0926 19:07:20.671415       1 vfs.go:1210] ignoring unknown mount option "nodev"
+D0926 19:07:20.671445       1 sys.go:230] Setting product_name: "Virtual Machine"
+I0926 19:07:20.671483       1 vfs.go:1065] Mounted "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/sysfs" to "/sys" type: sysfs, internal-options: ""
+D0926 19:07:20.671488       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/sys" at 19:07:20.671488034 (unix nanos: 1790449640671488034)
+D0926 19:07:20.671490       1 vfs.go:875] Mounting "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/proc" to "/proc", type: proc, options: [nosuid noexec nodev]
+W0926 19:07:20.671492       1 vfs.go:1210] ignoring unknown mount option "nodev"
+D0926 19:07:20.672098       1 loader.go:1649] Monitoring gofer health for container "8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440"
+I0926 19:07:20.672214       1 checkpoint.go:42] Setting up checkpoint files under [procfs]/gvisor
+I0926 19:07:20.672268       1 vfs.go:1065] Mounted "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/proc" to "/proc" type: proc, internal-options: ""
+D0926 19:07:20.672275       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/proc" at 19:07:20.672274328 (unix nanos: 1790449640672274328)
+D0926 19:07:20.672283       1 vfs.go:875] Mounting "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/devpts" to "/dev/pts", type: devpts, options: [nosuid noexec newinstance ptmxmode=0666 mode=0620 gid=5]
+W0926 19:07:20.672289       1 vfs.go:1210] ignoring unknown mount option "newinstance"
+W0926 19:07:20.672291       1 vfs.go:1210] ignoring unknown mount option "ptmxmode=0666"
+W0926 19:07:20.672294       1 vfs.go:1210] ignoring unknown mount option "mode=0620"
+W0926 19:07:20.672296       1 vfs.go:1210] ignoring unknown mount option "gid=5"
+I0926 19:07:20.672305       1 vfs.go:1065] Mounted "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/devpts" to "/dev/pts" type: devpts, internal-options: ""
+D0926 19:07:20.672308       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/dev/pts" at 19:07:20.672308301 (unix nanos: 1790449640672308301)
+D0926 19:07:20.672310       1 vfs.go:875] Mounting "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/shm" to "/dev/shm", type: tmpfs, options: [nosuid noexec nodev mode=1777 size=67108864]
+W0926 19:07:20.672318       1 vfs.go:1210] ignoring unknown mount option "nodev"
+I0926 19:07:20.672325       1 vfs.go:1065] Mounted "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/shm" to "/dev/shm" type: tmpfs, internal-options: "mode=1777,size=67108864"
+D0926 19:07:20.672330       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/dev/shm" at 19:07:20.672328915 (unix nanos: 1790449640672328915)
+D0926 19:07:20.672332       1 vfs.go:875] Mounting "/var/lib/docker/volumes/spike-84f7507b-runsc-none-workspace/_data" to "/workspace", type: bind, options: [rbind]
+D0926 19:07:20.672356       1 client.go:395] send [sockComm 6] MountReq{}
+D0926 19:07:20.672409       1 client.go:395] recv [sockComm 6] MountResp{Root: Inode{ControlFD: 1, Stat: Statx{Mask: 0x1fff, Mode: S_IFDIR|0o755, UID: 1000, GID: 1000, Ino: 3045605, DevMajor: 8, DevMinor: 2, Size: 4096, Blocks: 8, Blksize: 4096, Nlink: 2, Atime: 2026-09-26 19:07:19.177974702 +0000 UTC, Btime: 2026-09-26 19:07:18.315938661 +0000 UTC, Ctime: 2026-09-26 19:07:19.195975454 +0000 UTC, Mtime: 2026-09-26 19:07:19.195975454 +0000 UTC, Attributes: 0, AttributesMask: 0, RdevMajor: 0, RdevMinor: 0}}, MaxMessageSize: 2093056, SupportedMs: [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 21 22 23 24 25 26 27 28 29 30 31 32 33]}
+I0926 19:07:20.672601       1 vfs.go:1065] Mounted "/var/lib/docker/volumes/spike-84f7507b-runsc-none-workspace/_data" to "/workspace" type: bind, internal-options: "trans=fd,rfdno=6,wfdno=6,cache=remote_revalidating,directfs,disable_fifo_open"
+D0926 19:07:20.672630       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/workspace" at 19:07:20.672627866 (unix nanos: 1790449640672627866)
+D0926 19:07:20.672642       1 vfs.go:875] Mounting "/var/lib/docker/containers/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/hosts" to "/etc/hosts", type: bind, options: [rbind rprivate]
+W0926 19:07:20.672660       1 vfs.go:1210] ignoring unknown mount option "rprivate"
+D0926 19:07:20.673052       1 client.go:395] send [sockComm 8] MountReq{}
+D0926 19:07:20.673336       1 client.go:395] recv [sockComm 8] MountResp{Root: Inode{ControlFD: 1, Stat: Statx{Mask: 0x1fff, Mode: S_IFREG|0o644, UID: 0, GID: 0, Ino: 3045636, DevMajor: 8, DevMinor: 2, Size: 172, Blocks: 8, Blksize: 4096, Nlink: 1, Atime: 2026-09-26 19:07:20.355023879 +0000 UTC, Btime: 2026-09-26 19:07:18.410942634 +0000 UTC, Ctime: 2026-09-26 19:07:20.646036033 +0000 UTC, Mtime: 2026-09-26 19:07:20.646036033 +0000 UTC, Attributes: 0, AttributesMask: 0, RdevMajor: 0, RdevMinor: 0}}, MaxMessageSize: 2093056, SupportedMs: [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 21 22 23 24 25 26 27 28 29 30 31 32 33]}
+I0926 19:07:20.673397       1 vfs.go:1065] Mounted "/var/lib/docker/containers/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/hosts" to "/etc/hosts" type: bind, internal-options: "trans=fd,rfdno=8,wfdno=8,cache=remote_revalidating,directfs,disable_fifo_open"
+D0926 19:07:20.673407       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/etc/hosts" at 19:07:20.673406974 (unix nanos: 1790449640673406974)
+D0926 19:07:20.673636       1 vfs.go:875] Mounting "/var/lib/docker/volumes/spike-84f7507b-runsc-none-home/_data" to "/home/node", type: bind, options: [rbind]
+D0926 19:07:20.673665       1 client.go:395] send [sockComm 10] MountReq{}
+D0926 19:07:20.673731       1 client.go:395] recv [sockComm 10] MountResp{Root: Inode{ControlFD: 1, Stat: Statx{Mask: 0x1fff, Mode: S_IFDIR|0o755, UID: 1000, GID: 1000, Ino: 3045608, DevMajor: 8, DevMinor: 2, Size: 4096, Blocks: 8, Blksize: 4096, Nlink: 2, Atime: 2026-09-26 16:25:25.743459271 +0000 UTC, Btime: 2026-09-26 19:07:18.330939288 +0000 UTC, Ctime: 2026-09-26 19:07:19.205975872 +0000 UTC, Mtime: 2026-09-26 19:07:19.205975872 +0000 UTC, Attributes: 0, AttributesMask: 0, RdevMajor: 0, RdevMinor: 0}}, MaxMessageSize: 2093056, SupportedMs: [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 21 22 23 24 25 26 27 28 29 30 31 32 33]}
+I0926 19:07:20.673756       1 vfs.go:1065] Mounted "/var/lib/docker/volumes/spike-84f7507b-runsc-none-home/_data" to "/home/node" type: bind, internal-options: "trans=fd,rfdno=10,wfdno=10,cache=remote_revalidating,directfs,disable_fifo_open"
+D0926 19:07:20.673762       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/home/node" at 19:07:20.673761289 (unix nanos: 1790449640673761289)
+D0926 19:07:20.673764       1 vfs.go:875] Mounting "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/mqueue" to "/dev/mqueue", type: mqueue, options: [nosuid noexec nodev]
+W0926 19:07:20.673766       1 vfs.go:1173] ignoring unknown filesystem type "mqueue"
+D0926 19:07:20.673770       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/dev/mqueue" at 19:07:20.673769880 (unix nanos: 1790449640673769880)
+D0926 19:07:20.673773       1 vfs.go:875] Mounting "/var/lib/docker/containers/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/hostname" to "/etc/hostname", type: bind, options: [rbind rprivate]
+W0926 19:07:20.673778       1 vfs.go:1210] ignoring unknown mount option "rprivate"
+D0926 19:07:20.673786       1 client.go:395] send [sockComm 7] MountReq{}
+D0926 19:07:20.673839       1 client.go:395] recv [sockComm 7] MountResp{Root: Inode{ControlFD: 1, Stat: Statx{Mask: 0x1fff, Mode: S_IFREG|0o644, UID: 0, GID: 0, Ino: 3045639, DevMajor: 8, DevMinor: 2, Size: 13, Blocks: 8, Blksize: 4096, Nlink: 1, Atime: 2026-09-26 19:07:18.416942884 +0000 UTC, Btime: 2026-09-26 19:07:18.416942884 +0000 UTC, Ctime: 2026-09-26 19:07:20.579033234 +0000 UTC, Mtime: 2026-09-26 19:07:20.579033234 +0000 UTC, Attributes: 0, AttributesMask: 0, RdevMajor: 0, RdevMinor: 0}}, MaxMessageSize: 2093056, SupportedMs: [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 21 22 23 24 25 26 27 28 29 30 31 32 33]}
+I0926 19:07:20.673853       1 vfs.go:1065] Mounted "/var/lib/docker/containers/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/hostname" to "/etc/hostname" type: bind, internal-options: "trans=fd,rfdno=7,wfdno=7,cache=remote_revalidating,directfs,disable_fifo_open"
+D0926 19:07:20.673857       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/etc/hostname" at 19:07:20.673856680 (unix nanos: 1790449640673856680)
+D0926 19:07:20.673874       1 vfs.go:875] Mounting "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/cgroup" to "/sys/fs/cgroup", type: cgroup, options: [ro nosuid noexec nodev]
+W0926 19:07:20.673877       1 vfs.go:1210] ignoring unknown mount option "nodev"
+I0926 19:07:20.673887       1 vfs.go:1065] Mounted "/run/containerd/io.containerd.runtime.v2.task/moby/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/cgroup" to "/sys/fs/cgroup" type: tmpfs, internal-options: ""
+D0926 19:07:20.673964       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/sys/fs/cgroup" at 19:07:20.673964184 (unix nanos: 1790449640673964184)
+D0926 19:07:20.673966       1 vfs.go:875] Mounting "/var/lib/docker/containers/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/resolv.conf" to "/etc/resolv.conf", type: bind, options: [rbind rprivate]
+W0926 19:07:20.673974       1 vfs.go:1210] ignoring unknown mount option "rprivate"
+D0926 19:07:20.673980       1 client.go:395] send [sockComm 9] MountReq{}
+D0926 19:07:20.674054       1 client.go:395] recv [sockComm 9] MountResp{Root: Inode{ControlFD: 1, Stat: Statx{Mask: 0x1fff, Mode: S_IFREG|0o644, UID: 0, GID: 0, Ino: 3045637, DevMajor: 8, DevMinor: 2, Size: 256, Blocks: 8, Blksize: 4096, Nlink: 1, Atime: 2026-09-26 19:07:20.646036033 +0000 UTC, Btime: 2026-09-26 19:07:18.410942634 +0000 UTC, Ctime: 2026-09-26 19:07:20.646036033 +0000 UTC, Mtime: 2026-09-26 19:07:20.646036033 +0000 UTC, Attributes: 0, AttributesMask: 0, RdevMajor: 0, RdevMinor: 0}}, MaxMessageSize: 2093056, SupportedMs: [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 21 22 23 24 25 26 27 28 29 30 31 32 33]}
+I0926 19:07:20.674082       1 vfs.go:1065] Mounted "/var/lib/docker/containers/8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440/resolv.conf" to "/etc/resolv.conf" type: bind, internal-options: "trans=fd,rfdno=9,wfdno=9,cache=remote_revalidating,directfs,disable_fifo_open"
+D0926 19:07:20.674089       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint mounted "/etc/resolv.conf" at 19:07:20.674088863 (unix nanos: 1790449640674088863)
+I0926 19:07:20.674135       1 vfs.go:1314] Skipping internal tmpfs mount for "/tmp" because it's not empty
+D0926 19:07:20.674140       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint submounts mounted at 19:07:20.674140288 (unix nanos: 1790449640674140288)
+D0926 19:07:20.674149       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint device files created at 19:07:20.674149144 (unix nanos: 1790449640674149144)
+D0926 19:07:20.674208       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint executable path resolved at 19:07:20.674208157 (unix nanos: 1790449640674208157)
+D0926 19:07:20.674242       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint exec user home resolved at 19:07:20.674242475 (unix nanos: 1790449640674242475)
+I0926 19:07:20.674245       1 kernel.go:1369] EXEC: []string{"docker-entrypoint.sh", "sleep", "infinity"}
+D0926 19:07:20.674262       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint FS context created at 19:07:20.674262683 (unix nanos: 1790449640674262683)
+D0926 19:07:20.675309       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint memory manager created at 19:07:20.675308135 (unix nanos: 1790449640675308135)
+D0926 19:07:20.675572       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint executable loaded at 19:07:20.675571925 (unix nanos: 1790449640675571925)
+D0926 19:07:20.675582       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint VDSO mapped at 19:07:20.675581776 (unix nanos: 1790449640675581776)
+D0926 19:07:20.675584       1 syscalls.go:281] Allocating stack with size of 8388608 bytes
+D0926 19:07:20.675591       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint stack allocated at 19:07:20.675591691 (unix nanos: 1790449640675591691)
+D0926 19:07:20.675614       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint stack contents loaded at 19:07:20.675614072 (unix nanos: 1790449640675614072)
+D0926 19:07:20.675637       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint task image loaded at 19:07:20.675637626 (unix nanos: 1790449640675637626)
+D0926 19:07:20.675665       1 timing.go:125] Timer for runsc boot: Timeline runsc boot/root container reached midpoint init task created at 19:07:20.675665101 (unix nanos: 1790449640675665101)
+W0926 19:07:20.675668       1 seccomp.go:31] Seccomp spec is being ignored because oci-seccomp is disabled
+D0926 19:07:20.675672       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint root container created at 19:07:20.675671996 (unix nanos: 1790449640675671996)
+D0926 19:07:20.676506       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint signal forwarding started at 19:07:20.676504791 (unix nanos: 1790449640676504791)
+I0926 19:07:20.676516       1 loader.go:1364] Process should have started...
+I0926 19:07:20.676521       1 watchdog.go:207] Starting watchdog, period: 45s, timeout: 3m0s, action: logWarning
+D0926 19:07:20.676541       1 timing.go:125] Timer for runsc boot: Timeline runsc boot reached midpoint kernel started at 19:07:20.676541082 (unix nanos: 1790449640676541082)
+D0926 19:07:20.676543       1 timing.go:246] Timer for runsc boot: Timeline runsc boot/root container ended at 19:07:20.676543514 (unix nanos: 1790449640676543514)
+D0926 19:07:20.676548       1 timing.go:246] Timer for runsc boot: Timeline runsc boot ended at 19:07:20.676548599 (unix nanos: 1790449640676548599)
+I0926 19:07:20.676550       1 timing.go:549] Timer for runsc boot: Ended.
+I0926 19:07:20.676660       1 timing.go:866] ---- runsc boot timing information ----
+[19:07:20.620034]	                      	╭─ runsc boot                      
+[19:07:20.621013]	   +978µs ▎           	├─ Go code running: 978µs          
+[19:07:20.621488]	   +474µs ▏           	├─ boot subcommand dispatched: 474µs
+[19:07:20.621668]	   +180µs             	├─ CPUID initialized: 180µs        
+[19:07:20.621671]	     +3µs             	├─ ring0 initialized: 3µs          
+[19:07:20.621734]	    +63µs             	├─ host info read: 63µs            
+[19:07:20.622170]	   +435µs ▏           	├─ spec read: 435µs                
+[19:07:20.622260]	    +90µs             	├─ chroot base mounted: 90µs       
+[19:07:20.622291]	    +31µs             	├─ chroot proc mounted: 31µs       
+[19:07:20.622331]	    +40µs             	├─ chroot procfs set up: 40µs      
+[19:07:20.622336]	     +5µs             	├─ chroot sealed read-only: 5µs    
+[19:07:20.622366]	    +30µs             	├─ chroot set up: 30µs             
+[19:07:20.622814]	   +447µs ▏           	├─ sandbox capabilities computed: 447µs
+[19:07:20.622852]	    +37µs             	├─ current capabilities read: 37µs 
+[19:07:20.623772]	   +920µs ▎           	├─ bounding set trimmed on all threads: 920µs
+[19:07:20.623797]	    +25µs             	├─ capset applied on all threads: 25µs
+[19:07:20.623821]	    +23µs             	├─ capabilities applied: 23µs      
+[19:07:20.623853]	    +32µs             	├─ resolved mounts read: 32µs      
+[19:07:20.626364]	 +2 511µs ▊           	├─ seccheck initialized: 2 511µs   
+[19:07:20.626381]	    +17µs             	├─ RNG initialized: 17µs           
+[19:07:20.626398]	    +16µs             	├─ memory usage initialized: 16µs  
+[19:07:20.626477]	    +78µs             	├─ GOMAXPROCS set: 78µs            
+[19:07:20.626499]	    +22µs             	├─ donated FDs ingested: 22µs      
+[19:07:20.626542]	    +42µs             	├─ systrap memory file created: 42µs
+[19:07:20.627215]	   +673µs ▏           	├─ systrap stub initialized: 673µs 
+[19:07:20.629101]	 +1 885µs ▋           	├─ systrap source process created: 1 885µs
+[19:07:20.629126]	    +25µs             	├─ waiting for membarrier: 25µs    
+[19:07:20.629130]	     +4µs             	├─ host membarrier probed: 4µs     
+[19:07:20.629133]	     +2µs             	├─ platform created: 2µs           
+[19:07:20.629157]	    +23µs             	├─ memory file created: 23µs       
+[19:07:20.629178]	    +20µs             	├─ VDSO prepared: 20µs             
+[19:07:20.629200]	    +22µs             	├─ timekeeper configured: 22µs     
+[19:07:20.629316]	   +116µs             	├─ network stack created: 116µs    
+[19:07:20.629429]	   +112µs             	├─ kernel initialized: 112µs       
+[19:07:20.629441]	    +12µs             	├─ filesystems registered: 12µs    
+[19:07:20.629473]	    +32µs             	├─ process args created: 32µs      
+[19:07:20.629476]	     +3µs             	├─ compat logs initialized: 3µs    
+[19:07:20.629480]	     +3µs             	├─ mount hints parsed: 3µs         
+[19:07:20.629482]	     +2µs             	├─ host FS mount created: 2µs      
+[19:07:20.629775]	   +292µs             	├─ control server started: 292µs   
+[19:07:20.629784]	     +9µs             	├─ loader created: 9µs             
+[19:07:20.629808]	    +23µs             	├─ metrics initialized: 23µs       
+[19:07:20.629810]	     +2µs             	├─ notifying parent: 2µs           
+[19:07:20.669542]	+39 732µs ▉▉▉▉▉▉▉▉▉▉▉▉	├─ start signal received: 39 732µs 
+[19:07:20.669732]	   +190µs             	├─ network configured: 190µs       
+[19:07:20.669850]	   +118µs             	├─ open FDs validated: 118µs       
+[19:07:20.670575]	   +724µs ▏           	├─ pre-seccomp callback done: 724µs
+[19:07:20.670630]	    +55µs             	├─ precompiled seccomp program rendered: 55µs
+[19:07:20.670770]	   +139µs             	├─ seccomp filters installed: 139µs
+[19:07:20.670773]	     +3µs             	├─ forked: 3µs                     	╭─ root container
+[19:07:20.670814]	    +40µs             	│ ... 40µs ...                     	├─ FD table created: 40µs
+[19:07:20.670940]	   +125µs             	│ ... 166µs ...                    	├─ cgroups mounted: 125µs
+[19:07:20.671286]	   +346µs             	│ ... 512µs ...                    	├─ rootfs mounted: 346µs
+[19:07:20.671295]	     +9µs             	│ ... 522µs ...                    	├─ submounts prepared: 9µs
+[19:07:20.671410]	   +114µs             	│ ... 637µs ...                    	├─ mounted "/dev": 114µs
+[19:07:20.671488]	    +77µs             	│ ... 714µs ...                    	├─ mounted "/sys": 77µs
+[19:07:20.672274]	   +786µs ▎           	│ ... 1 500µs ...                  	├─ mounted "/proc": 786µs
+[19:07:20.672308]	    +33µs             	│ ... 1 534µs ...                  	├─ mounted "/dev/pts": 33µs
+[19:07:20.672328]	    +20µs             	│ ... 1 555µs ...                  	├─ mounted "/dev/shm": 20µs
+[19:07:20.672627]	   +298µs             	│ ... 1 854µs ...                  	├─ mounted "/workspace": 298µs
+[19:07:20.673406]	   +779µs ▎           	│ ... 2 633µs ...                  	├─ mounted "/etc/hosts": 779µs
+[19:07:20.673761]	   +354µs             	│ ... 2 987µs ...                  	├─ mounted "/home/node": 354µs
+[19:07:20.673769]	     +8µs             	│ ... 2 996µs ...                  	├─ mounted "/dev/mqueue": 8µs
+[19:07:20.673856]	    +86µs             	│ ... 3 082µs ...                  	├─ mounted "/etc/hostname": 86µs
+[19:07:20.673964]	   +107µs             	│ ... 3 190µs ...                  	├─ mounted "/sys/fs/cgroup": 107µs
+[19:07:20.674088]	   +124µs             	│ ... 3 315µs ...                  	├─ mounted "/etc/resolv.conf": 124µs
+[19:07:20.674140]	    +51µs             	│ ... 3 366µs ...                  	├─ submounts mounted: 51µs
+[19:07:20.674149]	     +8µs             	│ ... 3 375µs ...                  	├─ device files created: 8µs
+[19:07:20.674208]	    +59µs             	│ ... 3 434µs ...                  	├─ executable path resolved: 59µs
+[19:07:20.674242]	    +34µs             	│ ... 3 468µs ...                  	├─ exec user home resolved: 34µs
+[19:07:20.674262]	    +20µs             	│ ... 3 488µs ...                  	├─ FS context created: 20µs
+[19:07:20.675308]	 +1 045µs ▎           	│ ... 4 534µs ...                  	├─ memory manager created: 1 045µs
+[19:07:20.675571]	   +263µs             	│ ... 4 798µs ...                  	├─ executable loaded: 263µs
+[19:07:20.675581]	     +9µs             	│ ... 4 808µs ...                  	├─ VDSO mapped: 9µs
+[19:07:20.675591]	     +9µs             	│ ... 4 817µs ...                  	├─ stack allocated: 9µs
+[19:07:20.675614]	    +22µs             	│ ... 4 840µs ...                  	├─ stack contents loaded: 22µs
+[19:07:20.675637]	    +23µs             	│ ... 4 863µs ...                  	├─ task image loaded: 23µs
+[19:07:20.675665]	    +27µs             	│ ... 4 891µs ...                  	├─ init task created: 27µs
+[19:07:20.675671]	     +6µs             	├─ root container created: 4 898µs 	│ ... 6µs ...
+[19:07:20.676504]	   +832µs ▎           	├─ signal forwarding started: 832µs	│ ... 839µs ...
+[19:07:20.676541]	    +36µs             	├─ kernel started: 36µs            	│ ... 875µs ...
+[19:07:20.676543]	     +2µs             	│ ... 2µs ...                      	╰─ END 878µs, total 5 769µs
+[19:07:20.676548]	     +5µs             	╰─ END 7µs, total 56 513µs         
+---- End of runsc boot timing information ----
+
+D0926 19:07:20.676672       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac5dc40:sysno 12
+D0926 19:07:20.676676       1 timing.go:873] Timer for runsc boot: time 1790449640620034947 19:07:20.620034947 start runsc boot
+D0926 19:07:20.676683       1 usertrap_amd64.go:113] [   1:   1] Map a usertrap vma at 67000
+D0926 19:07:20.676681       1 timing.go:875] Timer for runsc boot: time 1790449640621013718 19:07:20.621013718 mid runsc boot = Go code running
+D0926 19:07:20.676690       1 timing.go:875] Timer for runsc boot: time 1790449640621488082 19:07:20.621488082 mid runsc boot = boot subcommand dispatched
+D0926 19:07:20.676694       1 timing.go:875] Timer for runsc boot: time 1790449640621668086 19:07:20.621668086 mid runsc boot = CPUID initialized
+D0926 19:07:20.676694       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 1
+D0926 19:07:20.676696       1 timing.go:875] Timer for runsc boot: time 1790449640621671099 19:07:20.621671099 mid runsc boot = ring0 initialized
+D0926 19:07:20.676699       1 timing.go:875] Timer for runsc boot: time 1790449640621734881 19:07:20.621734881 mid runsc boot = host info read
+D0926 19:07:20.676700       1 timing.go:875] Timer for runsc boot: time 1790449640622170113 19:07:20.622170113 mid runsc boot = spec read
+D0926 19:07:20.676702       1 timing.go:875] Timer for runsc boot: time 1790449640622260163 19:07:20.622260163 mid runsc boot = chroot base mounted
+D0926 19:07:20.676702       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac5dc40 trap addr 67050 ([184 12 0 0 0 15 5] -> [255 36 37 80 112 6 0])
+D0926 19:07:20.676704       1 timing.go:875] Timer for runsc boot: time 1790449640622291271 19:07:20.622291271 mid runsc boot = chroot proc mounted
+D0926 19:07:20.676707       1 timing.go:875] Timer for runsc boot: time 1790449640622331309 19:07:20.622331309 mid runsc boot = chroot procfs set up
+D0926 19:07:20.676709       1 timing.go:875] Timer for runsc boot: time 1790449640622336370 19:07:20.622336370 mid runsc boot = chroot sealed read-only
+D0926 19:07:20.676713       1 timing.go:875] Timer for runsc boot: time 1790449640622366970 19:07:20.622366970 mid runsc boot = chroot set up
+D0926 19:07:20.676715       1 timing.go:875] Timer for runsc boot: time 1790449640622814550 19:07:20.622814550 mid runsc boot = sandbox capabilities computed
+D0926 19:07:20.676717       1 timing.go:875] Timer for runsc boot: time 1790449640622852104 19:07:20.622852104 mid runsc boot = current capabilities read
+D0926 19:07:20.676719       1 timing.go:875] Timer for runsc boot: time 1790449640623772197 19:07:20.623772197 mid runsc boot = bounding set trimmed on all threads
+D0926 19:07:20.676723       1 timing.go:875] Timer for runsc boot: time 1790449640623797992 19:07:20.623797992 mid runsc boot = capset applied on all threads
+D0926 19:07:20.676727       1 timing.go:875] Timer for runsc boot: time 1790449640623821039 19:07:20.623821039 mid runsc boot = capabilities applied
+D0926 19:07:20.676730       1 timing.go:875] Timer for runsc boot: time 1790449640623853448 19:07:20.623853448 mid runsc boot = resolved mounts read
+D0926 19:07:20.676731       1 timing.go:875] Timer for runsc boot: time 1790449640626364775 19:07:20.626364775 mid runsc boot = seccheck initialized
+D0926 19:07:20.676733       1 timing.go:875] Timer for runsc boot: time 1790449640626381800 19:07:20.626381800 mid runsc boot = RNG initialized
+D0926 19:07:20.676736       1 timing.go:875] Timer for runsc boot: time 1790449640626398547 19:07:20.626398547 mid runsc boot = memory usage initialized
+D0926 19:07:20.676740       1 timing.go:875] Timer for runsc boot: time 1790449640626477230 19:07:20.626477230 mid runsc boot = GOMAXPROCS set
+D0926 19:07:20.676742       1 timing.go:875] Timer for runsc boot: time 1790449640626499946 19:07:20.626499946 mid runsc boot = donated FDs ingested
+D0926 19:07:20.676744       1 timing.go:875] Timer for runsc boot: time 1790449640626542063 19:07:20.626542063 mid runsc boot = systrap memory file created
+D0926 19:07:20.676745       1 timing.go:875] Timer for runsc boot: time 1790449640627215507 19:07:20.627215507 mid runsc boot = systrap stub initialized
+D0926 19:07:20.676746       1 timing.go:875] Timer for runsc boot: time 1790449640629101045 19:07:20.629101045 mid runsc boot = systrap source process created
+D0926 19:07:20.676749       1 timing.go:875] Timer for runsc boot: time 1790449640629126803 19:07:20.629126803 mid runsc boot = waiting for membarrier
+D0926 19:07:20.676751       1 timing.go:875] Timer for runsc boot: time 1790449640629130951 19:07:20.629130951 mid runsc boot = host membarrier probed
+D0926 19:07:20.676753       1 timing.go:875] Timer for runsc boot: time 1790449640629133140 19:07:20.629133140 mid runsc boot = platform created
+D0926 19:07:20.676755       1 timing.go:875] Timer for runsc boot: time 1790449640629157116 19:07:20.629157116 mid runsc boot = memory file created
+D0926 19:07:20.676757       1 timing.go:875] Timer for runsc boot: time 1790449640629178064 19:07:20.629178064 mid runsc boot = VDSO prepared
+D0926 19:07:20.676760       1 timing.go:875] Timer for runsc boot: time 1790449640629200178 19:07:20.629200178 mid runsc boot = timekeeper configured
+D0926 19:07:20.676762       1 timing.go:875] Timer for runsc boot: time 1790449640629316681 19:07:20.629316681 mid runsc boot = network stack created
+D0926 19:07:20.676763       1 timing.go:875] Timer for runsc boot: time 1790449640629429030 19:07:20.629429030 mid runsc boot = kernel initialized
+D0926 19:07:20.676765       1 timing.go:875] Timer for runsc boot: time 1790449640629441246 19:07:20.629441246 mid runsc boot = filesystems registered
+D0926 19:07:20.676767       1 timing.go:875] Timer for runsc boot: time 1790449640629473465 19:07:20.629473465 mid runsc boot = process args created
+D0926 19:07:20.676771       1 timing.go:875] Timer for runsc boot: time 1790449640629476539 19:07:20.629476539 mid runsc boot = compat logs initialized
+D0926 19:07:20.676772       1 timing.go:875] Timer for runsc boot: time 1790449640629480408 19:07:20.629480408 mid runsc boot = mount hints parsed
+D0926 19:07:20.676774       1 timing.go:875] Timer for runsc boot: time 1790449640629482717 19:07:20.629482717 mid runsc boot = host FS mount created
+D0926 19:07:20.676776       1 timing.go:875] Timer for runsc boot: time 1790449640629775134 19:07:20.629775134 mid runsc boot = control server started
+D0926 19:07:20.676778       1 timing.go:875] Timer for runsc boot: time 1790449640629784892 19:07:20.629784892 mid runsc boot = loader created
+D0926 19:07:20.676781       1 timing.go:875] Timer for runsc boot: time 1790449640629808402 19:07:20.629808402 mid runsc boot = metrics initialized
+D0926 19:07:20.676784       1 timing.go:875] Timer for runsc boot: time 1790449640629810634 19:07:20.629810634 mid runsc boot = notifying parent
+D0926 19:07:20.676787       1 timing.go:875] Timer for runsc boot: time 1790449640669542643 19:07:20.669542643 mid runsc boot = start signal received
+D0926 19:07:20.676788       1 timing.go:875] Timer for runsc boot: time 1790449640669732709 19:07:20.669732709 mid runsc boot = network configured
+D0926 19:07:20.676795       1 timing.go:875] Timer for runsc boot: time 1790449640669850733 19:07:20.669850733 mid runsc boot = open FDs validated
+D0926 19:07:20.676797       1 timing.go:875] Timer for runsc boot: time 1790449640670575622 19:07:20.670575622 mid runsc boot = pre-seccomp callback done
+D0926 19:07:20.676800       1 timing.go:875] Timer for runsc boot: time 1790449640670630905 19:07:20.670630905 mid runsc boot = precompiled seccomp program rendered
+D0926 19:07:20.676802       1 timing.go:875] Timer for runsc boot: time 1790449640670770471 19:07:20.670770471 mid runsc boot = seccomp filters installed
+D0926 19:07:20.676805       1 timing.go:875] Timer for runsc boot: time 1790449640670773708 19:07:20.670773708 mid runsc boot = forked
+D0926 19:07:20.676807       1 timing.go:873] Timer for runsc boot: time 1790449640670773708 19:07:20.670773708 start runsc boot/root container
+D0926 19:07:20.676810       1 timing.go:875] Timer for runsc boot: time 1790449640670814554 19:07:20.670814554 mid runsc boot/root container = FD table created
+D0926 19:07:20.676810       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac5ec9c:sysno 9
+D0926 19:07:20.676812       1 timing.go:875] Timer for runsc boot: time 1790449640670940206 19:07:20.670940206 mid runsc boot/root container = cgroups mounted
+D0926 19:07:20.676816       1 timing.go:875] Timer for runsc boot: time 1790449640671286579 19:07:20.671286579 mid runsc boot/root container = rootfs mounted
+D0926 19:07:20.676821       1 timing.go:875] Timer for runsc boot: time 1790449640671295783 19:07:20.671295783 mid runsc boot/root container = submounts prepared
+D0926 19:07:20.676823       1 timing.go:875] Timer for runsc boot: time 1790449640671410757 19:07:20.671410757 mid runsc boot/root container = mounted "/dev"
+D0926 19:07:20.676826       1 timing.go:875] Timer for runsc boot: time 1790449640671488034 19:07:20.671488034 mid runsc boot/root container = mounted "/sys"
+D0926 19:07:20.676827       1 timing.go:875] Timer for runsc boot: time 1790449640672274328 19:07:20.672274328 mid runsc boot/root container = mounted "/proc"
+D0926 19:07:20.676829       1 timing.go:875] Timer for runsc boot: time 1790449640672308301 19:07:20.672308301 mid runsc boot/root container = mounted "/dev/pts"
+D0926 19:07:20.676832       1 timing.go:875] Timer for runsc boot: time 1790449640672328915 19:07:20.672328915 mid runsc boot/root container = mounted "/dev/shm"
+D0926 19:07:20.676835       1 timing.go:875] Timer for runsc boot: time 1790449640672627866 19:07:20.672627866 mid runsc boot/root container = mounted "/workspace"
+D0926 19:07:20.676837       1 timing.go:875] Timer for runsc boot: time 1790449640673406974 19:07:20.673406974 mid runsc boot/root container = mounted "/etc/hosts"
+D0926 19:07:20.676840       1 timing.go:875] Timer for runsc boot: time 1790449640673761289 19:07:20.673761289 mid runsc boot/root container = mounted "/home/node"
+D0926 19:07:20.676842       1 timing.go:875] Timer for runsc boot: time 1790449640673769880 19:07:20.673769880 mid runsc boot/root container = mounted "/dev/mqueue"
+D0926 19:07:20.676843       1 timing.go:875] Timer for runsc boot: time 1790449640673856680 19:07:20.673856680 mid runsc boot/root container = mounted "/etc/hostname"
+D0926 19:07:20.676845       1 timing.go:875] Timer for runsc boot: time 1790449640673964184 19:07:20.673964184 mid runsc boot/root container = mounted "/sys/fs/cgroup"
+D0926 19:07:20.676846       1 timing.go:875] Timer for runsc boot: time 1790449640674088863 19:07:20.674088863 mid runsc boot/root container = mounted "/etc/resolv.conf"
+D0926 19:07:20.676849       1 timing.go:875] Timer for runsc boot: time 1790449640674140288 19:07:20.674140288 mid runsc boot/root container = submounts mounted
+D0926 19:07:20.676851       1 timing.go:875] Timer for runsc boot: time 1790449640674149144 19:07:20.674149144 mid runsc boot/root container = device files created
+D0926 19:07:20.676853       1 timing.go:875] Timer for runsc boot: time 1790449640674208157 19:07:20.674208157 mid runsc boot/root container = executable path resolved
+D0926 19:07:20.676863       1 timing.go:875] Timer for runsc boot: time 1790449640674242475 19:07:20.674242475 mid runsc boot/root container = exec user home resolved
+D0926 19:07:20.676866       1 timing.go:875] Timer for runsc boot: time 1790449640674262683 19:07:20.674262683 mid runsc boot/root container = FS context created
+D0926 19:07:20.676867       1 timing.go:875] Timer for runsc boot: time 1790449640675308135 19:07:20.675308135 mid runsc boot/root container = memory manager created
+D0926 19:07:20.676869       1 timing.go:875] Timer for runsc boot: time 1790449640675571925 19:07:20.675571925 mid runsc boot/root container = executable loaded
+D0926 19:07:20.676871       1 timing.go:875] Timer for runsc boot: time 1790449640675581776 19:07:20.675581776 mid runsc boot/root container = VDSO mapped
+D0926 19:07:20.676873       1 timing.go:875] Timer for runsc boot: time 1790449640675591691 19:07:20.675591691 mid runsc boot/root container = stack allocated
+D0926 19:07:20.676875       1 timing.go:875] Timer for runsc boot: time 1790449640675614072 19:07:20.675614072 mid runsc boot/root container = stack contents loaded
+D0926 19:07:20.676877       1 timing.go:875] Timer for runsc boot: time 1790449640675637626 19:07:20.675637626 mid runsc boot/root container = task image loaded
+D0926 19:07:20.676880       1 timing.go:875] Timer for runsc boot: time 1790449640675665101 19:07:20.675665101 mid runsc boot/root container = init task created
+D0926 19:07:20.676883       1 timing.go:875] Timer for runsc boot: time 1790449640675671996 19:07:20.675671996 mid runsc boot = root container created
+D0926 19:07:20.676885       1 timing.go:875] Timer for runsc boot: time 1790449640676504791 19:07:20.676504791 mid runsc boot = signal forwarding started
+D0926 19:07:20.676886       1 timing.go:875] Timer for runsc boot: time 1790449640676541082 19:07:20.676541082 mid runsc boot = kernel started
+D0926 19:07:20.676888       1 timing.go:877] Timer for runsc boot: time 1790449640676543514 19:07:20.676543514 end runsc boot/root container
+D0926 19:07:20.676891       1 timing.go:877] Timer for runsc boot: time 1790449640676548599 19:07:20.676548599 end runsc boot
+D0926 19:07:20.676890       1 urpc.go:600] urpc: successfully marshalled 37 bytes.
+D0926 19:07:20.676898       1 urpc.go:374] urpc: RPC call for method containerManager.StartRoot succeeded.
+D0926 19:07:20.676813       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 2
+D0926 19:07:20.676923       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac5ec9c trap addr 670a0 ([184 9 0 0 0 15 5] -> [255 36 37 160 112 6 0])
+D0926 19:07:20.677286       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac5e9e0:sysno 21
+D0926 19:07:20.677291       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 3
+D0926 19:07:20.677296       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac5e9e0 trap addr 670f0 ([184 21 0 0 0 15 5] -> [255 36 37 240 112 6 0])
+D0926 19:07:20.677358       1 urpc.go:435] urpc: unregistering client with FD 13
+D0926 19:07:20.677494       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac5e923:sysno 262
+D0926 19:07:20.677498       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 4
+D0926 19:07:20.677501       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac5e923 trap addr 67140 ([184 6 1 0 0 15 5] -> [255 36 37 64 113 6 0])
+D0926 19:07:20.677621       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac5ea00:sysno 3
+D0926 19:07:20.677646       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 5
+D0926 19:07:20.677655       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac5ea00 trap addr 67190 ([184 3 0 0 0 15 5] -> [255 36 37 144 113 6 0])
+D0926 19:07:20.677861       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac5eb93:sysno 17
+D0926 19:07:20.677865       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 6
+D0926 19:07:20.677870       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac5eb93 trap addr 671e0 ([184 17 0 0 0 15 5] -> [255 36 37 224 113 6 0])
+D0926 19:07:20.678196       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac4fe83:sysno 218
+D0926 19:07:20.678205       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 7
+D0926 19:07:20.678210       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac4fe83 trap addr 67230 ([184 218 0 0 0 15 5] -> [255 36 37 48 114 6 0])
+D0926 19:07:20.678249       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac4ff52:sysno 334
+D0926 19:07:20.678252       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 8
+D0926 19:07:20.678256       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac4ff52 trap addr 67280 ([184 78 1 0 0 15 5] -> [255 36 37 128 114 6 0])
+I0926 19:07:20.678271       1 compat.go:120] Unsupported syscall rseq(0x7ea53aa53060,0x20,0x0,0x53053053,0x0,0x0). It is likely that you can safely ignore this message and that this is not the cause of any error. Please, refer to https://gvisor.dev/c/linux/amd64/rseq for more information.
+D0926 19:07:20.678333       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac5ed00:sysno 10
+D0926 19:07:20.678337       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 9
+D0926 19:07:20.678340       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac5ed00 trap addr 672d0 ([184 10 0 0 0 15 5] -> [255 36 37 208 114 6 0])
+D0926 19:07:20.678518       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ac5ece0:sysno 11
+D0926 19:07:20.678521       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 10
+D0926 19:07:20.678524       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ac5ece0 trap addr 67320 ([184 11 0 0 0 15 5] -> [255 36 37 32 115 6 0])
+D0926 19:07:20.678628       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab2a500:sysno 102
+D0926 19:07:20.678630       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 11
+D0926 19:07:20.678633       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab2a500 trap addr 67370 ([184 102 0 0 0 15 5] -> [255 36 37 112 115 6 0])
+D0926 19:07:20.678698       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab2a520:sysno 104
+D0926 19:07:20.678700       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 12
+D0926 19:07:20.678702       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab2a520 trap addr 673c0 ([184 104 0 0 0 15 5] -> [255 36 37 192 115 6 0])
+D0926 19:07:20.678762       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab2a4e0:sysno 39
+D0926 19:07:20.678764       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 13
+D0926 19:07:20.678774       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab2a4e0 trap addr 67410 ([184 39 0 0 0 15 5] -> [255 36 37 16 116 6 0])
+D0926 19:07:20.678871       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53aa91118:sysno 13
+D0926 19:07:20.678879       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 14
+D0926 19:07:20.678881       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53aa91118 trap addr 67460 ([184 13 0 0 0 15 5] -> [255 36 37 96 116 6 0])
+D0926 19:07:20.678989       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab2a510:sysno 107
+D0926 19:07:20.678994       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 15
+D0926 19:07:20.678997       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab2a510 trap addr 674b0 ([184 107 0 0 0 15 5] -> [255 36 37 176 116 6 0])
+D0926 19:07:20.679090       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53aa94189:sysno 318
+D0926 19:07:20.679093       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 16
+D0926 19:07:20.679095       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53aa94189 trap addr 67500 ([184 62 1 0 0 15 5] -> [255 36 37 0 117 6 0])
+D0926 19:07:20.679204       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab52c40:sysno 12
+D0926 19:07:20.679207       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 17
+D0926 19:07:20.679210       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab52c40 trap addr 67550 ([184 12 0 0 0 15 5] -> [255 36 37 80 117 6 0])
+D0926 19:07:20.679404       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab2a4f0:sysno 110
+D0926 19:07:20.679406       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 18
+D0926 19:07:20.679408       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab2a4f0 trap addr 675a0 ([184 110 0 0 0 15 5] -> [255 36 37 160 117 6 0])
+D0926 19:07:20.679484       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab4dcc7:sysno 79
+D0926 19:07:20.679486       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 19
+D0926 19:07:20.679489       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab4dcc7 trap addr 675f0 ([184 79 0 0 0 15 5] -> [255 36 37 240 117 6 0])
+D0926 19:07:20.679594       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab4d00a:sysno 257
+D0926 19:07:20.679596       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 20
+D0926 19:07:20.679599       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab4d00a trap addr 67640 ([184 1 1 0 0 15 5] -> [255 36 37 64 118 6 0])
+D0926 19:07:20.679670       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab51f59:sysno 72
+D0926 19:07:20.679673       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 21
+D0926 19:07:20.679675       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab51f59 trap addr 67690 ([184 72 0 0 0 15 5] -> [255 36 37 144 118 6 0])
+D0926 19:07:20.679772       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab4d9e9:sysno 3
+D0926 19:07:20.679775       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 22
+D0926 19:07:20.679777       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab4d9e9 trap addr 676e0 ([184 3 0 0 0 15 5] -> [255 36 37 224 118 6 0])
+D0926 19:07:20.679917       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab2a530:sysno 108
+D0926 19:07:20.679926       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 23
+D0926 19:07:20.679930       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab2a530 trap addr 67730 ([184 108 0 0 0 15 5] -> [255 36 37 48 119 6 0])
+D0926 19:07:20.680262       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab4db02:sysno 293
+D0926 19:07:20.680264       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 24
+D0926 19:07:20.680271       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab4db02 trap addr 67780 ([184 37 1 0 0 15 5] -> [255 36 37 128 119 6 0])
+D0926 19:07:20.680335       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab2934c:sysno 56
+D0926 19:07:20.680337       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 25
+D0926 19:07:20.680339       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab2934c trap addr 677d0 ([184 56 0 0 0 15 5] -> [255 36 37 208 119 6 0])
+D0926 19:07:20.681963       1 usertrap_amd64.go:232] [   2:   2] Found the pattern at ip 7ea53ab29386:sysno 273
+D0926 19:07:20.681975       1 usertrap_amd64.go:129] [   2:   2] Allocate a new trap: 0x142056912900 26
+D0926 19:07:20.682017       1 usertrap_amd64.go:245] [   2:   2] Apply the binary patch addr 7ea53ab29386 trap addr 67820 ([184 17 1 0 0 15 5] -> [255 36 37 32 120 6 0])
+D0926 19:07:20.682849       1 usertrap_amd64.go:232] [   2:   2] Found the pattern at ip 7ea53ab4daa0:sysno 33
+D0926 19:07:20.682862       1 usertrap_amd64.go:129] [   2:   2] Allocate a new trap: 0x142056912900 27
+D0926 19:07:20.682866       1 usertrap_amd64.go:245] [   2:   2] Apply the binary patch addr 7ea53ab4daa0 trap addr 67870 ([184 33 0 0 0 15 5] -> [255 36 37 112 120 6 0])
+D0926 19:07:20.682976       1 usertrap_amd64.go:232] [   2:   2] Found the pattern at ip 7ea53ab4c863:sysno 262
+D0926 19:07:20.682981       1 usertrap_amd64.go:129] [   2:   2] Allocate a new trap: 0x142056912900 28
+D0926 19:07:20.682983       1 usertrap_amd64.go:245] [   2:   2] Apply the binary patch addr 7ea53ab4c863 trap addr 678c0 ([184 6 1 0 0 15 5] -> [255 36 37 192 120 6 0])
+D0926 19:07:20.683095       1 usertrap_amd64.go:232] [   2:   2] Found the pattern at ip 7ea53ab4d349:sysno 1
+D0926 19:07:20.683098       1 usertrap_amd64.go:129] [   2:   2] Allocate a new trap: 0x142056912900 29
+D0926 19:07:20.683101       1 usertrap_amd64.go:245] [   2:   2] Apply the binary patch addr 7ea53ab4d349 trap addr 67910 ([184 1 0 0 0 15 5] -> [255 36 37 16 121 6 0])
+D0926 19:07:20.683117       1 task_exit.go:226] [   2:   2] Transitioning from exit state TaskExitNone to TaskExitInitiated
+D0926 19:07:20.683212       1 task_exit.go:226] [   2:   2] Transitioning from exit state TaskExitInitiated to TaskExitZombie
+D0926 19:07:20.683217       1 task_signals.go:501] [   1:   1] Notified of signal 17
+D0926 19:07:20.683310       1 task_signals.go:249] [   1:   1] Signal 17: delivering to handler
+D0926 19:07:20.683539       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab28bcc:sysno 61
+D0926 19:07:20.683543       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 26
+D0926 19:07:20.683546       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab28bcc trap addr 67820 ([184 61 0 0 0 15 5] -> [255 36 37 32 120 6 0])
+D0926 19:07:20.683561       1 task_exit.go:226] [   2:   2] Transitioning from exit state TaskExitZombie to TaskExitDead
+D0926 19:07:20.683849       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab4c863:sysno 262
+D0926 19:07:20.683851       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 27
+D0926 19:07:20.683863       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab4c863 trap addr 67870 ([184 6 1 0 0 15 5] -> [255 36 37 112 120 6 0])
+D0926 19:07:20.683978       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea53ab29ad0:sysno 59
+D0926 19:07:20.683982       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c108d0 28
+D0926 19:07:20.683984       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea53ab29ad0 trap addr 678c0 ([184 59 0 0 0 15 5] -> [255 36 37 192 120 6 0])
+D0926 19:07:20.684252       1 syscalls.go:281] [   1:   1] Allocating stack with size of 8388608 bytes
+D0926 19:07:20.684557       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500e5c40:sysno 12
+D0926 19:07:20.684567       1 usertrap_amd64.go:113] [   1:   1] Map a usertrap vma at 6a000
+D0926 19:07:20.684576       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 1
+D0926 19:07:20.684587       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500e5c40 trap addr 6a050 ([184 12 0 0 0 15 5] -> [255 36 37 80 160 6 0])
+D0926 19:07:20.684747       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500e6c9c:sysno 9
+D0926 19:07:20.684750       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 2
+D0926 19:07:20.684754       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500e6c9c trap addr 6a0a0 ([184 9 0 0 0 15 5] -> [255 36 37 160 160 6 0])
+D0926 19:07:20.684790       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500e69e0:sysno 21
+D0926 19:07:20.684792       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 3
+D0926 19:07:20.684794       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500e69e0 trap addr 6a0f0 ([184 21 0 0 0 15 5] -> [255 36 37 240 160 6 0])
+D0926 19:07:20.684817       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500e6923:sysno 262
+D0926 19:07:20.684818       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 4
+D0926 19:07:20.684820       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500e6923 trap addr 6a140 ([184 6 1 0 0 15 5] -> [255 36 37 64 161 6 0])
+D0926 19:07:20.684833       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500e6a00:sysno 3
+D0926 19:07:20.684835       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 5
+D0926 19:07:20.684837       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500e6a00 trap addr 6a190 ([184 3 0 0 0 15 5] -> [255 36 37 144 161 6 0])
+D0926 19:07:20.684887       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500e6b93:sysno 17
+D0926 19:07:20.684894       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 6
+D0926 19:07:20.684896       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500e6b93 trap addr 6a1e0 ([184 17 0 0 0 15 5] -> [255 36 37 224 161 6 0])
+D0926 19:07:20.685006       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500d7e83:sysno 218
+D0926 19:07:20.685009       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 7
+D0926 19:07:20.685011       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500d7e83 trap addr 6a230 ([184 218 0 0 0 15 5] -> [255 36 37 48 162 6 0])
+D0926 19:07:20.685838       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500d7f52:sysno 334
+D0926 19:07:20.685870       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 8
+D0926 19:07:20.685878       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500d7f52 trap addr 6a280 ([184 78 1 0 0 15 5] -> [255 36 37 128 162 6 0])
+D0926 19:07:20.685999       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500e6d00:sysno 10
+D0926 19:07:20.686004       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 9
+D0926 19:07:20.686008       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500e6d00 trap addr 6a2d0 ([184 10 0 0 0 15 5] -> [255 36 37 208 162 6 0])
+D0926 19:07:20.686182       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea9500e6ce0:sysno 11
+D0926 19:07:20.686192       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 10
+D0926 19:07:20.686197       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea9500e6ce0 trap addr 6a320 ([184 11 0 0 0 15 5] -> [255 36 37 32 163 6 0])
+D0926 19:07:20.686281       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea94ff1c189:sysno 318
+D0926 19:07:20.686284       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 11
+D0926 19:07:20.686288       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea94ff1c189 trap addr 6a370 ([184 62 1 0 0 15 5] -> [255 36 37 112 163 6 0])
+D0926 19:07:20.686325       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea94ffdac40:sysno 12
+D0926 19:07:20.686328       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 12
+D0926 19:07:20.686331       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea94ffdac40 trap addr 6a3c0 ([184 12 0 0 0 15 5] -> [255 36 37 192 163 6 0])
+D0926 19:07:20.686389       1 usertrap_amd64.go:232] [   1:   1] Found the pattern at ip 7ea94ffb0dc9:sysno 34
+D0926 19:07:20.686395       1 usertrap_amd64.go:129] [   1:   1] Allocate a new trap: 0x142056c11b00 13
+D0926 19:07:20.686398       1 usertrap_amd64.go:245] [   1:   1] Apply the binary patch addr 7ea94ffb0dc9 trap addr 6a410 ([184 34 0 0 0 15 5] -> [255 36 37 16 164 6 0])
+D0926 19:07:20.703559       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.703654       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.703663       1 urpc.go:304] urpc: handling RPC call for method containerManager.ContainerRuntimeState
+D0926 19:07:20.703672       1 controller.go:1202] containerManager.ContainerRuntimeState: cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440
+D0926 19:07:20.703688       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.703691       1 urpc.go:374] urpc: RPC call for method containerManager.ContainerRuntimeState succeeded.
+D0926 19:07:20.703733       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.707464       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.707556       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.707576       1 urpc.go:304] urpc: handling RPC call for method containerManager.ContainerRuntimeState
+D0926 19:07:20.707583       1 controller.go:1202] containerManager.ContainerRuntimeState: cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440
+D0926 19:07:20.707596       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.707598       1 urpc.go:374] urpc: RPC call for method containerManager.ContainerRuntimeState succeeded.
+D0926 19:07:20.707630       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.708039       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.708162       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.708174       1 urpc.go:304] urpc: handling RPC call for method containerManager.ExecuteAsync
+D0926 19:07:20.708348       1 controller.go:518] containerManager.ExecuteAsync, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, args: tmux has-session -t work
+W0926 19:07:20.708421       1 seccomp.go:31] Seccomp spec is being ignored because oci-seccomp is disabled
+I0926 19:07:20.708570       1 kernel.go:1369] EXEC: []string{"tmux", "has-session", "-t", "work"}
+D0926 19:07:20.708838       1 syscalls.go:281] Allocating stack with size of 8388608 bytes
+D0926 19:07:20.709009       1 loader.go:1798] updated processes: map[{8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 0}:0x142056bf0040 {8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 3}:0x142056c0a980]
+D0926 19:07:20.709105       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.709116       1 urpc.go:374] urpc: RPC call for method containerManager.ExecuteAsync succeeded.
+D0926 19:07:20.709122       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.709178       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.709377       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.709382       1 urpc.go:304] urpc: handling RPC call for method containerManager.WaitPID
+D0926 19:07:20.709395       1 controller.go:946] containerManager.Wait, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, pid: 3
+D0926 19:07:20.709528       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd563a0c40:sysno 12
+D0926 19:07:20.709541       1 usertrap_amd64.go:113] [   3:   3] Map a usertrap vma at 66000
+D0926 19:07:20.709557       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 1
+D0926 19:07:20.709566       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd563a0c40 trap addr 66050 ([184 12 0 0 0 15 5] -> [255 36 37 80 96 6 0])
+D0926 19:07:20.709872       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd563a1c9c:sysno 9
+D0926 19:07:20.709876       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 2
+D0926 19:07:20.709884       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd563a1c9c trap addr 660a0 ([184 9 0 0 0 15 5] -> [255 36 37 160 96 6 0])
+D0926 19:07:20.709949       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd563a19e0:sysno 21
+D0926 19:07:20.709951       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 3
+D0926 19:07:20.709956       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd563a19e0 trap addr 660f0 ([184 21 0 0 0 15 5] -> [255 36 37 240 96 6 0])
+D0926 19:07:20.710000       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd563a1923:sysno 262
+D0926 19:07:20.710002       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 4
+D0926 19:07:20.710005       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd563a1923 trap addr 66140 ([184 6 1 0 0 15 5] -> [255 36 37 64 97 6 0])
+D0926 19:07:20.710033       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd563a1a00:sysno 3
+D0926 19:07:20.710035       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 5
+D0926 19:07:20.710036       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd563a1a00 trap addr 66190 ([184 3 0 0 0 15 5] -> [255 36 37 144 97 6 0])
+D0926 19:07:20.711524       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd563a1b93:sysno 17
+D0926 19:07:20.711542       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 6
+D0926 19:07:20.711555       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd563a1b93 trap addr 661e0 ([184 17 0 0 0 15 5] -> [255 36 37 224 97 6 0])
+D0926 19:07:20.711748       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd56392e83:sysno 218
+D0926 19:07:20.711753       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 7
+D0926 19:07:20.711756       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd56392e83 trap addr 66230 ([184 218 0 0 0 15 5] -> [255 36 37 48 98 6 0])
+D0926 19:07:20.711788       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd56392f52:sysno 334
+D0926 19:07:20.711790       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 8
+D0926 19:07:20.711792       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd56392f52 trap addr 66280 ([184 78 1 0 0 15 5] -> [255 36 37 128 98 6 0])
+D0926 19:07:20.712102       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd563a1d00:sysno 10
+D0926 19:07:20.712109       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 9
+D0926 19:07:20.712113       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd563a1d00 trap addr 662d0 ([184 10 0 0 0 15 5] -> [255 36 37 208 98 6 0])
+D0926 19:07:20.712577       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd563a1ce0:sysno 11
+D0926 19:07:20.712584       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 10
+D0926 19:07:20.712588       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd563a1ce0 trap addr 66320 ([184 11 0 0 0 15 5] -> [255 36 37 32 99 6 0])
+D0926 19:07:20.712680       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd56076189:sysno 318
+D0926 19:07:20.712682       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 11
+D0926 19:07:20.712684       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd56076189 trap addr 66370 ([184 62 1 0 0 15 5] -> [255 36 37 112 99 6 0])
+D0926 19:07:20.712842       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd56134c40:sysno 12
+D0926 19:07:20.712845       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 12
+D0926 19:07:20.712848       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd56134c40 trap addr 663c0 ([184 12 0 0 0 15 5] -> [255 36 37 192 99 6 0])
+D0926 19:07:20.713094       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5612e863:sysno 262
+D0926 19:07:20.713103       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 13
+D0926 19:07:20.713106       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5612e863 trap addr 66410 ([184 6 1 0 0 15 5] -> [255 36 37 16 100 6 0])
+D0926 19:07:20.713139       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd561389ac:sysno 9
+D0926 19:07:20.713141       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 14
+D0926 19:07:20.713143       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd561389ac trap addr 66460 ([184 9 0 0 0 15 5] -> [255 36 37 96 100 6 0])
+D0926 19:07:20.713175       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd56133e60:sysno 3
+D0926 19:07:20.713177       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 15
+D0926 19:07:20.713179       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd56133e60 trap addr 664b0 ([184 3 0 0 0 15 5] -> [255 36 37 176 100 6 0])
+D0926 19:07:20.713249       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd560c5077:sysno 202
+D0926 19:07:20.713255       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 16
+D0926 19:07:20.713257       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd560c5077 trap addr 66500 ([184 202 0 0 0 15 5] -> [255 36 37 0 101 6 0])
+D0926 19:07:20.713354       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5612f3e0:sysno 8
+D0926 19:07:20.713356       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 17
+D0926 19:07:20.713358       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5612f3e0 trap addr 66550 ([184 8 0 0 0 15 5] -> [255 36 37 80 101 6 0])
+D0926 19:07:20.713408       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5612fcc7:sysno 79
+D0926 19:07:20.713410       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 18
+D0926 19:07:20.713411       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5612fcc7 trap addr 665a0 ([184 79 0 0 0 15 5] -> [255 36 37 160 101 6 0])
+D0926 19:07:20.713420       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd56130ab0:sysno 89
+D0926 19:07:20.713422       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 19
+D0926 19:07:20.713423       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd56130ab0 trap addr 665f0 ([184 89 0 0 0 15 5] -> [255 36 37 240 101 6 0])
+D0926 19:07:20.713563       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5610c500:sysno 102
+D0926 19:07:20.713588       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 20
+D0926 19:07:20.713594       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5610c500 trap addr 66640 ([184 102 0 0 0 15 5] -> [255 36 37 64 102 6 0])
+D0926 19:07:20.713684       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd56141dc0:sysno 41
+D0926 19:07:20.713689       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 21
+D0926 19:07:20.713693       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd56141dc0 trap addr 66690 ([184 41 0 0 0 15 5] -> [255 36 37 144 102 6 0])
+D0926 19:07:20.713751       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd561417b9:sysno 42
+D0926 19:07:20.713754       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 22
+D0926 19:07:20.713757       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd561417b9 trap addr 666e0 ([184 42 0 0 0 15 5] -> [255 36 37 224 102 6 0])
+D0926 19:07:20.713967       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5612f410:sysno 21
+D0926 19:07:20.713974       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 23
+D0926 19:07:20.713977       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5612f410 trap addr 66730 ([184 21 0 0 0 15 5] -> [255 36 37 48 103 6 0])
+D0926 19:07:20.714004       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5612f5a7:sysno 439
+D0926 19:07:20.714007       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 24
+D0926 19:07:20.714010       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5612f5a7 trap addr 66780 ([184 183 1 0 0 15 5] -> [255 36 37 128 103 6 0])
+D0926 19:07:20.714018       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5612ef30:sysno 83
+D0926 19:07:20.714021       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 25
+D0926 19:07:20.714023       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5612ef30 trap addr 667d0 ([184 83 0 0 0 15 5] -> [255 36 37 208 103 6 0])
+D0926 19:07:20.714063       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5610c510:sysno 107
+D0926 19:07:20.714066       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 26
+D0926 19:07:20.714069       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5610c510 trap addr 66820 ([184 107 0 0 0 15 5] -> [255 36 37 32 104 6 0])
+D0926 19:07:20.714075       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5610c520:sysno 104
+D0926 19:07:20.714077       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 27
+D0926 19:07:20.714080       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5610c520 trap addr 66870 ([184 104 0 0 0 15 5] -> [255 36 37 112 104 6 0])
+D0926 19:07:20.714085       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5610c530:sysno 108
+D0926 19:07:20.714087       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 28
+D0926 19:07:20.714090       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5610c530 trap addr 668c0 ([184 108 0 0 0 15 5] -> [255 36 37 192 104 6 0])
+D0926 19:07:20.714145       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5612fb30:sysno 293
+D0926 19:07:20.714149       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 29
+D0926 19:07:20.714151       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5612fb30 trap addr 66910 ([184 37 1 0 0 15 5] -> [255 36 37 16 105 6 0])
+D0926 19:07:20.714169       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5610c4e0:sysno 39
+D0926 19:07:20.714171       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 30
+D0926 19:07:20.714173       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5610c4e0 trap addr 66960 ([184 39 0 0 0 15 5] -> [255 36 37 96 105 6 0])
+D0926 19:07:20.714188       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd56073118:sysno 13
+D0926 19:07:20.714191       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 31
+D0926 19:07:20.714193       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd56073118 trap addr 669b0 ([184 13 0 0 0 15 5] -> [255 36 37 176 105 6 0])
+D0926 19:07:20.714251       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd56140456:sysno 157
+D0926 19:07:20.714254       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 32
+D0926 19:07:20.714256       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd56140456 trap addr 66a00 ([184 157 0 0 0 15 5] -> [255 36 37 0 106 6 0])
+D0926 19:07:20.714274       1 task_acct.go:195] [   3:   3] Set thread name to "tmux: client"
+D0926 19:07:20.714292       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5610ab00:sysno 63
+D0926 19:07:20.714295       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 33
+D0926 19:07:20.714298       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5610ab00 trap addr 66a50 ([184 63 0 0 0 15 5] -> [255 36 37 80 106 6 0])
+D0926 19:07:20.714361       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5612f9e9:sysno 3
+D0926 19:07:20.714364       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 34
+D0926 19:07:20.714366       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5612f9e9 trap addr 66aa0 ([184 3 0 0 0 15 5] -> [255 36 37 160 106 6 0])
+D0926 19:07:20.714373       1 usertrap_amd64.go:232] [   3:   3] Found the pattern at ip 7ecd5612f349:sysno 1
+D0926 19:07:20.714375       1 usertrap_amd64.go:129] [   3:   3] Allocate a new trap: 0x1420569132f0 35
+D0926 19:07:20.714377       1 usertrap_amd64.go:245] [   3:   3] Apply the binary patch addr 7ecd5612f349 trap addr 66af0 ([184 1 0 0 0 15 5] -> [255 36 37 240 106 6 0])
+D0926 19:07:20.714394       1 task_exit.go:226] [   3:   3] Transitioning from exit state TaskExitNone to TaskExitInitiated
+D0926 19:07:20.714774       1 task_exit.go:226] [   3:   3] Transitioning from exit state TaskExitInitiated to TaskExitZombie
+D0926 19:07:20.714781       1 task_exit.go:226] [   3:   3] Transitioning from exit state TaskExitZombie to TaskExitDead
+D0926 19:07:20.714791       1 loader.go:1886] updated processes (removal): map[{8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 0}:0x142056bf0040]
+D0926 19:07:20.714800       1 controller.go:948] containerManager.Wait, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, pid: 3, waitStatus: 0x100, err: <nil>
+D0926 19:07:20.714811       1 urpc.go:600] urpc: successfully marshalled 38 bytes.
+D0926 19:07:20.714814       1 urpc.go:374] urpc: RPC call for method containerManager.WaitPID succeeded.
+D0926 19:07:20.714908       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.735115       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.735236       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.735244       1 urpc.go:304] urpc: handling RPC call for method containerManager.ContainerRuntimeState
+D0926 19:07:20.735253       1 controller.go:1202] containerManager.ContainerRuntimeState: cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440
+D0926 19:07:20.735272       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.735275       1 urpc.go:374] urpc: RPC call for method containerManager.ContainerRuntimeState succeeded.
+D0926 19:07:20.735333       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.739026       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.739096       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.739100       1 urpc.go:304] urpc: handling RPC call for method containerManager.ContainerRuntimeState
+D0926 19:07:20.739105       1 controller.go:1202] containerManager.ContainerRuntimeState: cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440
+D0926 19:07:20.739118       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.739120       1 urpc.go:374] urpc: RPC call for method containerManager.ContainerRuntimeState succeeded.
+D0926 19:07:20.739191       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.739704       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.739949       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.739959       1 urpc.go:304] urpc: handling RPC call for method containerManager.ExecuteAsync
+D0926 19:07:20.740004       1 controller.go:518] containerManager.ExecuteAsync, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, args: sh -c printf RESTART_EXEC_OK
+W0926 19:07:20.740094       1 seccomp.go:31] Seccomp spec is being ignored because oci-seccomp is disabled
+I0926 19:07:20.740198       1 kernel.go:1369] EXEC: []string{"sh", "-c", "printf RESTART_EXEC_OK"}
+D0926 19:07:20.740424       1 syscalls.go:281] Allocating stack with size of 8388608 bytes
+D0926 19:07:20.740498       1 loader.go:1798] updated processes: map[{8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 0}:0x142056bf0040 {8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 4}:0x142056c0acc0]
+D0926 19:07:20.740521       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.740532       1 urpc.go:374] urpc: RPC call for method containerManager.ExecuteAsync succeeded.
+D0926 19:07:20.740913       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.740942       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.741132       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.741148       1 urpc.go:304] urpc: handling RPC call for method containerManager.WaitPID
+D0926 19:07:20.741172       1 controller.go:946] containerManager.Wait, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, pid: 4
+D0926 19:07:20.741251       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f8dc40:sysno 12
+D0926 19:07:20.741265       1 usertrap_amd64.go:113] [   4:   4] Map a usertrap vma at 67000
+D0926 19:07:20.741276       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 1
+D0926 19:07:20.741286       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f8dc40 trap addr 67050 ([184 12 0 0 0 15 5] -> [255 36 37 80 112 6 0])
+D0926 19:07:20.741802       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f8ec9c:sysno 9
+D0926 19:07:20.741808       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 2
+D0926 19:07:20.741811       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f8ec9c trap addr 670a0 ([184 9 0 0 0 15 5] -> [255 36 37 160 112 6 0])
+D0926 19:07:20.741975       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f8e9e0:sysno 21
+D0926 19:07:20.741985       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 3
+D0926 19:07:20.741990       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f8e9e0 trap addr 670f0 ([184 21 0 0 0 15 5] -> [255 36 37 240 112 6 0])
+D0926 19:07:20.742061       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f8e923:sysno 262
+D0926 19:07:20.742064       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 4
+D0926 19:07:20.742067       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f8e923 trap addr 67140 ([184 6 1 0 0 15 5] -> [255 36 37 64 113 6 0])
+D0926 19:07:20.742104       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f8ea00:sysno 3
+D0926 19:07:20.742106       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 5
+D0926 19:07:20.742108       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f8ea00 trap addr 67190 ([184 3 0 0 0 15 5] -> [255 36 37 144 113 6 0])
+D0926 19:07:20.742415       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f8eb93:sysno 17
+D0926 19:07:20.742420       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 6
+D0926 19:07:20.742423       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f8eb93 trap addr 671e0 ([184 17 0 0 0 15 5] -> [255 36 37 224 113 6 0])
+D0926 19:07:20.742926       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f7fe83:sysno 218
+D0926 19:07:20.742932       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 7
+D0926 19:07:20.742936       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f7fe83 trap addr 67230 ([184 218 0 0 0 15 5] -> [255 36 37 48 114 6 0])
+D0926 19:07:20.742968       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f7ff52:sysno 334
+D0926 19:07:20.742971       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 8
+D0926 19:07:20.742973       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f7ff52 trap addr 67280 ([184 78 1 0 0 15 5] -> [255 36 37 128 114 6 0])
+D0926 19:07:20.743045       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f8ed00:sysno 10
+D0926 19:07:20.743048       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 9
+D0926 19:07:20.743051       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f8ed00 trap addr 672d0 ([184 10 0 0 0 15 5] -> [255 36 37 208 114 6 0])
+D0926 19:07:20.743152       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4f8ece0:sysno 11
+D0926 19:07:20.743155       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 10
+D0926 19:07:20.743158       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4f8ece0 trap addr 67320 ([184 11 0 0 0 15 5] -> [255 36 37 32 115 6 0])
+D0926 19:07:20.743197       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4e5a500:sysno 102
+D0926 19:07:20.743200       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 11
+D0926 19:07:20.743202       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4e5a500 trap addr 67370 ([184 102 0 0 0 15 5] -> [255 36 37 112 115 6 0])
+D0926 19:07:20.743226       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4e5a520:sysno 104
+D0926 19:07:20.743228       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 12
+D0926 19:07:20.743230       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4e5a520 trap addr 673c0 ([184 104 0 0 0 15 5] -> [255 36 37 192 115 6 0])
+D0926 19:07:20.743235       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4e5a4e0:sysno 39
+D0926 19:07:20.743236       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 13
+D0926 19:07:20.743238       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4e5a4e0 trap addr 67410 ([184 39 0 0 0 15 5] -> [255 36 37 16 116 6 0])
+D0926 19:07:20.743252       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4dc1118:sysno 13
+D0926 19:07:20.743254       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 14
+D0926 19:07:20.743255       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4dc1118 trap addr 67460 ([184 13 0 0 0 15 5] -> [255 36 37 96 116 6 0])
+D0926 19:07:20.743279       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4e5a510:sysno 107
+D0926 19:07:20.743281       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 15
+D0926 19:07:20.743283       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4e5a510 trap addr 674b0 ([184 107 0 0 0 15 5] -> [255 36 37 176 116 6 0])
+D0926 19:07:20.743296       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4dc4189:sysno 318
+D0926 19:07:20.743298       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 16
+D0926 19:07:20.743300       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4dc4189 trap addr 67500 ([184 62 1 0 0 15 5] -> [255 36 37 0 117 6 0])
+D0926 19:07:20.743324       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4e82c40:sysno 12
+D0926 19:07:20.743326       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 17
+D0926 19:07:20.743328       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4e82c40 trap addr 67550 ([184 12 0 0 0 15 5] -> [255 36 37 80 117 6 0])
+D0926 19:07:20.743361       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4e5a4f0:sysno 110
+D0926 19:07:20.743363       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 18
+D0926 19:07:20.743365       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4e5a4f0 trap addr 675a0 ([184 110 0 0 0 15 5] -> [255 36 37 160 117 6 0])
+D0926 19:07:20.743383       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4e7dcc7:sysno 79
+D0926 19:07:20.743385       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 19
+D0926 19:07:20.743386       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4e7dcc7 trap addr 675f0 ([184 79 0 0 0 15 5] -> [255 36 37 240 117 6 0])
+D0926 19:07:20.743416       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4e5a530:sysno 108
+D0926 19:07:20.743418       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 20
+D0926 19:07:20.743421       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4e5a530 trap addr 67640 ([184 108 0 0 0 15 5] -> [255 36 37 64 118 6 0])
+D0926 19:07:20.743441       1 usertrap_amd64.go:232] [   4:   4] Found the pattern at ip 7ee3e4e7d349:sysno 1
+D0926 19:07:20.743443       1 usertrap_amd64.go:129] [   4:   4] Allocate a new trap: 0x1420569137d0 21
+D0926 19:07:20.743445       1 usertrap_amd64.go:245] [   4:   4] Apply the binary patch addr 7ee3e4e7d349 trap addr 67690 ([184 1 0 0 0 15 5] -> [255 36 37 144 118 6 0])
+D0926 19:07:20.743457       1 task_exit.go:226] [   4:   4] Transitioning from exit state TaskExitNone to TaskExitInitiated
+D0926 19:07:20.743575       1 task_exit.go:226] [   4:   4] Transitioning from exit state TaskExitInitiated to TaskExitZombie
+D0926 19:07:20.743578       1 task_exit.go:226] [   4:   4] Transitioning from exit state TaskExitZombie to TaskExitDead
+D0926 19:07:20.743587       1 loader.go:1886] updated processes (removal): map[{8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 0}:0x142056bf0040]
+D0926 19:07:20.743594       1 controller.go:948] containerManager.Wait, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, pid: 4, waitStatus: 0x0, err: <nil>
+D0926 19:07:20.743607       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.743611       1 urpc.go:374] urpc: RPC call for method containerManager.WaitPID succeeded.
+D0926 19:07:20.743679       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.767082       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.767160       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.767181       1 urpc.go:304] urpc: handling RPC call for method containerManager.ContainerRuntimeState
+D0926 19:07:20.767191       1 controller.go:1202] containerManager.ContainerRuntimeState: cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440
+D0926 19:07:20.767210       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.767213       1 urpc.go:374] urpc: RPC call for method containerManager.ContainerRuntimeState succeeded.
+D0926 19:07:20.767336       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.771093       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.771160       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.771168       1 urpc.go:304] urpc: handling RPC call for method containerManager.ContainerRuntimeState
+D0926 19:07:20.771174       1 controller.go:1202] containerManager.ContainerRuntimeState: cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440
+D0926 19:07:20.771185       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.771188       1 urpc.go:374] urpc: RPC call for method containerManager.ContainerRuntimeState succeeded.
+D0926 19:07:20.771311       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.771703       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.771790       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.771796       1 urpc.go:304] urpc: handling RPC call for method containerManager.ExecuteAsync
+D0926 19:07:20.771819       1 controller.go:518] containerManager.ExecuteAsync, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, args: cat /workspace/saved.txt /home/node/saved.txt
+W0926 19:07:20.771902       1 seccomp.go:31] Seccomp spec is being ignored because oci-seccomp is disabled
+I0926 19:07:20.772100       1 kernel.go:1369] EXEC: []string{"cat", "/workspace/saved.txt", "/home/node/saved.txt"}
+D0926 19:07:20.772310       1 syscalls.go:281] Allocating stack with size of 8388608 bytes
+D0926 19:07:20.772379       1 loader.go:1798] updated processes: map[{8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 0}:0x142056bf0040 {8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 5}:0x142056c0af40]
+D0926 19:07:20.772397       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.772406       1 urpc.go:374] urpc: RPC call for method containerManager.ExecuteAsync succeeded.
+D0926 19:07:20.772457       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.772575       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.772793       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.772801       1 urpc.go:304] urpc: handling RPC call for method containerManager.WaitPID
+D0926 19:07:20.772808       1 controller.go:946] containerManager.Wait, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, pid: 5
+D0926 19:07:20.772807       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00ea2c40:sysno 12
+D0926 19:07:20.772817       1 usertrap_amd64.go:113] [   5:   5] Map a usertrap vma at 67000
+D0926 19:07:20.772833       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 1
+D0926 19:07:20.772842       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00ea2c40 trap addr 67050 ([184 12 0 0 0 15 5] -> [255 36 37 80 112 6 0])
+D0926 19:07:20.773165       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00ea3c9c:sysno 9
+D0926 19:07:20.773172       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 2
+D0926 19:07:20.773176       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00ea3c9c trap addr 670a0 ([184 9 0 0 0 15 5] -> [255 36 37 160 112 6 0])
+D0926 19:07:20.773269       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00ea39e0:sysno 21
+D0926 19:07:20.773273       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 3
+D0926 19:07:20.773275       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00ea39e0 trap addr 670f0 ([184 21 0 0 0 15 5] -> [255 36 37 240 112 6 0])
+D0926 19:07:20.773438       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00ea3923:sysno 262
+D0926 19:07:20.773442       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 4
+D0926 19:07:20.773444       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00ea3923 trap addr 67140 ([184 6 1 0 0 15 5] -> [255 36 37 64 113 6 0])
+D0926 19:07:20.773589       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00ea3a00:sysno 3
+D0926 19:07:20.773596       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 5
+D0926 19:07:20.773600       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00ea3a00 trap addr 67190 ([184 3 0 0 0 15 5] -> [255 36 37 144 113 6 0])
+D0926 19:07:20.773665       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00ea3b93:sysno 17
+D0926 19:07:20.773669       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 6
+D0926 19:07:20.773672       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00ea3b93 trap addr 671e0 ([184 17 0 0 0 15 5] -> [255 36 37 224 113 6 0])
+D0926 19:07:20.773801       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00e94e83:sysno 218
+D0926 19:07:20.773805       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 7
+D0926 19:07:20.773808       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00e94e83 trap addr 67230 ([184 218 0 0 0 15 5] -> [255 36 37 48 114 6 0])
+D0926 19:07:20.773904       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00e94f52:sysno 334
+D0926 19:07:20.773909       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 8
+D0926 19:07:20.773911       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00e94f52 trap addr 67280 ([184 78 1 0 0 15 5] -> [255 36 37 128 114 6 0])
+D0926 19:07:20.774023       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00ea3d00:sysno 10
+D0926 19:07:20.774033       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 9
+D0926 19:07:20.774038       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00ea3d00 trap addr 672d0 ([184 10 0 0 0 15 5] -> [255 36 37 208 114 6 0])
+D0926 19:07:20.774211       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00ea3ce0:sysno 11
+D0926 19:07:20.774217       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 10
+D0926 19:07:20.774220       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00ea3ce0 trap addr 67320 ([184 11 0 0 0 15 5] -> [255 36 37 32 115 6 0])
+D0926 19:07:20.774298       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00cd9189:sysno 318
+D0926 19:07:20.774306       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 11
+D0926 19:07:20.774309       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00cd9189 trap addr 67370 ([184 62 1 0 0 15 5] -> [255 36 37 112 115 6 0])
+D0926 19:07:20.774483       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00d97c40:sysno 12
+D0926 19:07:20.774495       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 12
+D0926 19:07:20.774498       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00d97c40 trap addr 673c0 ([184 12 0 0 0 15 5] -> [255 36 37 192 115 6 0])
+D0926 19:07:20.774718       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00d91863:sysno 262
+D0926 19:07:20.774722       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 13
+D0926 19:07:20.774725       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00d91863 trap addr 67410 ([184 6 1 0 0 15 5] -> [255 36 37 16 116 6 0])
+D0926 19:07:20.774816       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00d9200a:sysno 257
+D0926 19:07:20.774823       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 14
+D0926 19:07:20.774827       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00d9200a trap addr 67460 ([184 1 1 0 0 15 5] -> [255 36 37 96 116 6 0])
+D0926 19:07:20.774997       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00d963c3:sysno 221
+D0926 19:07:20.775004       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 15
+D0926 19:07:20.775007       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00d963c3 trap addr 674b0 ([184 221 0 0 0 15 5] -> [255 36 37 176 116 6 0])
+D0926 19:07:20.775043       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00d9b9ac:sysno 9
+D0926 19:07:20.775046       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 16
+D0926 19:07:20.775050       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00d9b9ac trap addr 67500 ([184 9 0 0 0 15 5] -> [255 36 37 0 117 6 0])
+D0926 19:07:20.775582       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00d92349:sysno 1
+D0926 19:07:20.775590       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 17
+D0926 19:07:20.775593       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00d92349 trap addr 67550 ([184 1 0 0 0 15 5] -> [255 36 37 80 117 6 0])
+D0926 19:07:20.775630       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00d9ba00:sysno 11
+D0926 19:07:20.775632       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 18
+D0926 19:07:20.775634       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00d9ba00 trap addr 675a0 ([184 11 0 0 0 15 5] -> [255 36 37 160 117 6 0])
+D0926 19:07:20.775671       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00d929e9:sysno 3
+D0926 19:07:20.775674       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 19
+D0926 19:07:20.775676       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00d929e9 trap addr 675f0 ([184 3 0 0 0 15 5] -> [255 36 37 240 117 6 0])
+D0926 19:07:20.776177       1 usertrap_amd64.go:232] [   5:   5] Found the pattern at ip 7ede00d96e60:sysno 3
+D0926 19:07:20.776193       1 usertrap_amd64.go:129] [   5:   5] Allocate a new trap: 0x142056913dd0 20
+D0926 19:07:20.776254       1 usertrap_amd64.go:245] [   5:   5] Apply the binary patch addr 7ede00d96e60 trap addr 67640 ([184 3 0 0 0 15 5] -> [255 36 37 64 118 6 0])
+D0926 19:07:20.776294       1 task_exit.go:226] [   5:   5] Transitioning from exit state TaskExitNone to TaskExitInitiated
+D0926 19:07:20.776564       1 task_exit.go:226] [   5:   5] Transitioning from exit state TaskExitInitiated to TaskExitZombie
+D0926 19:07:20.776574       1 task_exit.go:226] [   5:   5] Transitioning from exit state TaskExitZombie to TaskExitDead
+D0926 19:07:20.776599       1 loader.go:1886] updated processes (removal): map[{8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440 0}:0x142056bf0040]
+D0926 19:07:20.776611       1 controller.go:948] containerManager.Wait, cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, pid: 5, waitStatus: 0x0, err: <nil>
+D0926 19:07:20.776629       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.776635       1 urpc.go:374] urpc: RPC call for method containerManager.WaitPID succeeded.
+D0926 19:07:20.776693       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.936073       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.936162       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.936172       1 urpc.go:304] urpc: handling RPC call for method containerManager.ContainerRuntimeState
+D0926 19:07:20.936180       1 controller.go:1202] containerManager.ContainerRuntimeState: cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440
+D0926 19:07:20.936198       1 urpc.go:600] urpc: successfully marshalled 36 bytes.
+D0926 19:07:20.936201       1 urpc.go:374] urpc: RPC call for method containerManager.ContainerRuntimeState succeeded.
+D0926 19:07:20.936244       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.936640       1 urpc.go:424] urpc: registering client with FD 82
+D0926 19:07:20.936688       1 urpc.go:643] urpc: unmarshal success.
+D0926 19:07:20.936691       1 urpc.go:304] urpc: handling RPC call for method containerManager.Signal
+D0926 19:07:20.936729       1 controller.go:1048] containerManager.Signal: cid: 8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440, PID: 0, signal: 15, mode: Process
+D0926 19:07:20.936739       1 task_signals.go:501] [   1:   1] Notified of signal 15
+D0926 19:07:20.936752       1 urpc.go:600] urpc: successfully marshalled 37 bytes.
+D0926 19:07:20.936755       1 urpc.go:374] urpc: RPC call for method containerManager.Signal succeeded.
+D0926 19:07:20.936820       1 urpc.go:435] urpc: unregistering client with FD 82
+D0926 19:07:20.936846       1 task_signals.go:233] [   1:   1] Signal 15, PID: 1, TID: 1, fault addr: 0x0: terminating thread group
+D0926 19:07:20.936863       1 task_exit.go:226] [   1:   1] Transitioning from exit state TaskExitNone to TaskExitInitiated
+I0926 19:07:20.937504       1 loader.go:1669] Gofer socket disconnected, killing container "8bc9b59dc3d0e7aeff95dbeb7f7898cd7f88a39a0dbe32b909359b3ea0afb440"
+D0926 19:07:20.937535       1 task_exit.go:401] [   1:   1] Init process terminating, killing namespace
+D0926 19:07:20.937544       1 task_signals.go:512] [   1:   1] No task notified of signal 9
+D0926 19:07:20.937549       1 task_exit.go:226] [   1:   1] Transitioning from exit state TaskExitInitiated to TaskExitZombie
+D0926 19:07:20.937552       1 task_exit.go:226] [   1:   1] Transitioning from exit state TaskExitZombie to TaskExitDead
+I0926 19:07:20.937571       1 boot.go:799] application exiting with killed by signal 15
+I0926 19:07:20.937589       1 watchdog.go:223] Stopping watchdog
+I0926 19:07:20.937600       1 watchdog.go:227] Watchdog stopped
+I0926 19:07:20.937666       1 cli.go:317] Exiting with status: 15

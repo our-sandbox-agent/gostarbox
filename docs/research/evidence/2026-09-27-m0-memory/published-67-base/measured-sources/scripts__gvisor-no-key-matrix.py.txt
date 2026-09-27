@@ -1,0 +1,465 @@
+#!/usr/bin/env python3
+"""Execute bounded #8 diagnostics on an authorized dedicated Linux host.
+
+No model requests or credentials. E05 and E10 remain not_run. Run as root for
+host cgroup observations. Only resources created by this invocation are removed.
+"""
+import argparse
+import fcntl
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import platform
+import pty
+import re
+import select
+import signal
+import struct
+import subprocess
+import termios
+import time
+from datetime import datetime, timezone
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location('report', ROOT / 'scripts/gvisor-report.py')
+report_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(report_module)
+redact_spec = importlib.util.spec_from_file_location('gvisor_redact', ROOT / 'scripts/gvisor_redact.py')
+redact_module = importlib.util.module_from_spec(redact_spec)
+redact_spec.loader.exec_module(redact_module)
+FIXTURE_COMMIT = '02dc635051bb005d65e31f0a7e1f81e747498bd3'
+
+
+def now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def available_mib():
+    values = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
+    return int(values['MemAvailable'].split()[0]) // 1024
+
+
+class Matrix:
+    def __init__(self, args):
+        self.args = args
+        self.out = args.output
+        self.out.mkdir(parents=True, exist_ok=False)
+        self.report = report_module.template()
+        self.run_id = self.report['run_id']
+        self.resources = []
+        self.label = 'setup'
+        self.main = None
+        self.docker = ['docker', '--host', 'unix:///var/run/docker.sock']
+        self.env = {k: v for k, v in os.environ.items() if not k.startswith('DOCKER_')}
+        self.env['LC_ALL'] = 'C.UTF-8'
+        # Every evidence write goes through write()/log(), so scrub there once.
+        # E05/E10 inject a real key; registering it keeps it out of the bundle.
+        self.redactor = redact_module.Redactor().add_from_environ(self.env)
+        for secret in getattr(args, 'redact', None) or []:
+            self.redactor.add(secret)
+        self.write('policy.json', {'min_host_available_mib': 2048, 'cpu_quota': 0.5,
+            'cpu_seconds': 20, 'cpu_ratio_range': [0.35, 0.65], 'memory_limit_mib': 128,
+            'max_memory_allocation_mib': 256, 'pid_limit': 64, 'max_forks': 80,
+            'model_requests': 0, 'credentials_injected': False})
+        source_paths = list((ROOT / 'diagnostics/gvisor').glob('*')) + list((ROOT / 'diagnostics/gvisor/probes').glob('*.py'))
+        source_paths += [ROOT / 'scripts' / name for name in ('gvisor-no-key-matrix.py', 'gvisor-report.py', 'gvisor-preflight.py')]
+        self.write('source-manifest.json', {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+                                          for p in sorted(source_paths) if p.is_file()})
+
+    def write(self, name, obj):
+        (self.out / name).write_text(json.dumps(self.redactor.scrub(obj), indent=2) + '\n')
+
+    def log(self, record):
+        with (self.out / (self.label + '.jsonl')).open('a') as output:
+            output.write(json.dumps(self.redactor.scrub(record)) + '\n')
+
+    def command(self, argv, timeout=60, check=True):
+        started = now()
+        try:
+            result = subprocess.run(argv, env=self.env, capture_output=True, text=True, timeout=timeout)
+        except subprocess.TimeoutExpired as error:
+            self.log({'command': argv, 'started_at': started, 'finished_at': now(), 'exit_code': 124,
+                      'stdout': str(error.stdout or ''), 'stderr': 'timeout'})
+            raise
+        self.log({'command': argv, 'started_at': started, 'finished_at': now(),
+                  'exit_code': result.returncode, 'stdout': result.stdout, 'stderr': result.stderr})
+        if check:
+            result.check_returncode()
+        return result
+
+    def dock(self, *args, **kwargs):
+        return self.command(self.docker + list(args), **kwargs)
+
+    def execute(self, cid, *args, **kwargs):
+        return self.dock('exec', cid, *args, **kwargs)
+
+    def inspect(self, cid, field):
+        return json.loads(self.dock('inspect', '--format', '{{json ' + field + '}}', cid).stdout)
+
+    def create(self, suffix, cpu='1', memory='1g', pids='256', runtime='runsc', hardened=True, guest_pids=None):
+        if available_mib() < 3072:
+            raise RuntimeError('Not enough headroom to start another test')
+        name = 'spike-' + self.run_id[:8] + '-' + suffix
+        entry = {'name': name, 'id': None, 'label': self.run_id}
+        self.resources.append(entry)
+        self.write('manifest.json', self.resources)  # Intent before mutation.
+        args = ['create', '--name', name, '--label', 'sandbox.spike=' + self.run_id,
+                '--runtime=' + runtime, '--pull=never', '--user', '1000:1000',
+                '--cpus', cpu, '--memory', memory, '--memory-swap', memory, '--pids-limit', pids]
+        if hardened:
+            args += ['--cap-drop', 'ALL', '--security-opt', 'no-new-privileges']
+        if guest_pids is not None:
+            args += ['--ulimit', f'nproc={guest_pids}:{guest_pids}']
+        args += [self.args.image, 'sleep', 'infinity']
+        cid = self.dock(*args).stdout.strip()
+        entry['id'] = cid
+        self.write('manifest.json', self.resources)
+        self.dock('start', cid)
+        return cid
+
+    def cgroup(self, cid):
+        pid = self.inspect(cid, '.State.Pid')
+        text = Path(f'/proc/{pid}/cgroup').read_text()
+        self.log({'host_pid': pid, 'proc_cgroup': text,
+                  'cmdline': Path(f'/proc/{pid}/cmdline').read_bytes().replace(b'\0', b' ').decode()})
+        relative = next(line[3:] for line in text.splitlines() if line.startswith('0::'))
+        path = Path('/sys/fs/cgroup') / relative.lstrip('/')
+        if cid not in str(path):
+            raise RuntimeError('Cannot attribute cgroup to this container')
+        return path
+
+    @staticmethod
+    def stats(path):
+        result = {'at': time.monotonic(), 'host_available_mib': available_mib()}
+        for name in ('cpu.max', 'cpu.stat', 'memory.max', 'memory.current', 'memory.events',
+                     'pids.max', 'pids.current', 'pids.events'):
+            try:
+                result[name] = (path / name).read_text().strip()
+            except FileNotFoundError:
+                result[name] = None
+        return result
+
+    def probe(self, cid, name, timeout=35, artifact_suffix=''):
+        self.dock('cp', str(ROOT / 'diagnostics/gvisor/probes' / name), cid + ':/workspace/' + name)
+        path = self.cgroup(cid)
+        command = self.docker + ['exec', cid, 'python3', '/workspace/' + name]
+        started = now()
+        process = subprocess.Popen(command, env=self.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        samples = []
+        deadline = time.monotonic() + timeout
+        try:
+            while process.poll() is None:
+                samples.append(self.stats(path))
+                if time.monotonic() > deadline or samples[-1]['host_available_mib'] < 2048:
+                    raise RuntimeError('Probe timeout or host headroom guard')
+                time.sleep(0.05)
+            stdout, stderr = process.communicate(timeout=3)
+            samples.append(self.stats(path))
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate(timeout=3)
+                self.dock('stop', '--time', '2', cid, check=False)
+        self.log({'command': command, 'started_at': started, 'finished_at': now(),
+                  'exit_code': process.returncode, 'stdout': stdout, 'stderr': stderr})
+        self.write(self.label + artifact_suffix + '-cgroup.json', samples)
+        return process.returncode, stdout, samples
+
+    def version(self):
+        return self.execute(self.main, 'claude', '--version').stdout.strip()
+
+    def evidence(self, names):
+        return [{'path': name, 'sha256': hashlib.sha256((self.out / name).read_bytes()).hexdigest()}
+                for name in names]
+
+    def case(self, key, expected, test):
+        self.label = key
+        row = next(row for row in self.report['cases'] if row['id'] == key)
+        row.update(started_at=now(), expected=expected,
+                   command=f'python3 scripts/gvisor-no-key-matrix.py --image {self.args.image} --pty-image {self.args.pty_image} --cases {key} --output NEW_DIRECTORY')
+        try:
+            row['claude_before'] = self.version()
+            passed, observed, code = test()
+            row.update(status='pass' if passed else 'fail', observed=observed, exit_code=code)
+        except Exception as error:
+            row.update(status='fail', observed=f'{type(error).__name__}: {error}', exit_code=1)
+            self.log({'test_error': row['observed']})
+        finally:
+            try:
+                row['claude_after'] = self.version()
+            except Exception:
+                row['claude_after'] = 'unavailable'
+            if row['claude_before'] != row['claude_after']:
+                row['status'] = 'fail'
+            row['finished_at'] = now()
+            row['evidence'] = self.evidence(sorted(p.name for p in self.out.glob(key + '*') if p.is_file()))
+            self.write('report.json', self.report)
+            print(key, row['status'], row['observed'], flush=True)
+
+    def runtime(self):
+        runtime = self.inspect(self.main, '.HostConfig.Runtime')
+        self.cgroup(self.main)
+        config = json.loads(Path('/etc/docker/daemon.json').read_text())['runtimes']['runsc']
+        self.log({'registered_runtime': config})
+        pid = self.inspect(self.main, '.State.Pid')
+        cmdline = Path(f'/proc/{pid}/cmdline').read_bytes().decode()
+        return runtime == 'runsc' and '--platform=systrap' in config['runtimeArgs'] and 'runsc' in cmdline, 'Runtime inspect, daemon flags and live host process recorded', 0
+
+    def shell(self):
+        r = self.execute(self.main, 'sh', '-c', "id; printf 'SHELL_OK\\n'")
+        return 'uid=1000' in r.stdout and 'SHELL_OK' in r.stdout, r.stdout.strip(), r.returncode
+
+    def repo(self):
+        command = ('git clone --depth=1 --no-checkout https://github.com/our-sandbox-agent/sandbox-console.git /workspace/repo && '
+                   f'cd /workspace/repo && git fetch --depth=1 origin {FIXTURE_COMMIT} && git checkout --detach FETCH_HEAD && '
+                   'git rev-parse HEAD && sha256sum package-lock.json lifecycle.test.js file-deletion.test.js')
+        r = self.execute(self.main, 'sh', '-c', command, timeout=120)
+        return FIXTURE_COMMIT in r.stdout, r.stdout.strip(), r.returncode
+
+    def package(self):
+        r = self.execute(self.main, 'sh', '-c', 'cd /workspace/repo && npm ci --ignore-scripts --no-audit --no-fund && npm test', timeout=180)
+        return r.returncode == 0, 'Pinned public fixture npm ci and node tests completed; full TAP in log', r.returncode
+
+    def terminal(self):
+        # Minimal upstream workload on Alpine, then the same workload with
+        # hardening/resource flags. Only identity/pinning/cleanup flags are
+        # added to the minimal invocation. It only opens a device and exits.
+        pts = []
+        for suffix, hard in (('pty-minimal', False), ('pty-hardened', True)):
+            name = 'spike-' + self.run_id[:8] + '-' + suffix
+            entry = {'name': name, 'id': None, 'label': self.run_id}
+            self.resources.append(entry)
+            self.write('manifest.json', self.resources)
+            args = ['create', '--name', name, '--label', 'sandbox.spike=' + self.run_id,
+                    '--runtime=runsc', '--pull=never', '--user', '1000:1000']
+            if hard:
+                args += ['--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
+                         '--network=none', '--cpus', '1', '--memory', '512m',
+                         '--memory-swap', '512m', '--pids-limit', '128']
+            args += [self.args.pty_image, 'sh', '-c', 'exec 3<>/dev/ptmx']
+            cid = self.dock(*args).stdout.strip()
+            entry['id'] = cid
+            self.write('manifest.json', self.resources)
+            r = self.dock('start', '-a', cid, timeout=15, check=False)
+            pts.append(r.returncode)
+        if any(pts):
+            return False, f'Non-root ptmx failed: minimal/hardened exits={pts}; tmux steps blocked', max(pts)
+        self.dock('cp', str(ROOT / 'diagnostics/gvisor/probes/progress.py'), self.main + ':/workspace/progress.py')
+        clients = []
+
+        def attach(first):
+            master, slave = pty.openpty()
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 24, 80, 0, 0))
+            args = self.docker + ['exec', '-it', '-e', 'TERM=xterm-256color', self.main, 'tmux']
+            args += ['new-session', '-s', 'matrix'] if first else ['attach-session', '-t', 'matrix']
+            child = subprocess.Popen(args, env=self.env, stdin=slave, stdout=slave, stderr=slave, start_new_session=True)
+            os.close(slave)
+            clients.append((child, master))
+            self.log({'pty_client_command': args})
+            return child, master
+
+        def drain(fd, seconds):
+            data = bytearray()
+            until = time.monotonic() + seconds
+            while time.monotonic() < until:
+                if select.select([fd], [], [], 0.1)[0]:
+                    try:
+                        chunk = os.read(fd, 65536)
+                    except OSError:
+                        break
+                    if not chunk:
+                        break
+                    data.extend(chunk)
+            self.log({'terminal_output': data.decode(errors='replace')})
+
+        try:
+            child, fd = attach(True)
+            drain(fd, 1)
+            fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 100, 0, 0))
+            os.kill(child.pid, signal.SIGWINCH)
+            drain(fd, 1)
+            os.write(fd, b'stty size > /workspace/size; python3 /workspace/progress.py\n')
+            drain(fd, 1)
+            size = self.execute(self.main, 'cat', '/workspace/size').stdout.strip()
+            before = json.loads(self.execute(self.main, 'cat', '/workspace/progress.json').stdout)
+            os.write(fd, b'\x02d')  # tmux detach closes the Docker exec client.
+            child.wait(timeout=5)
+            time.sleep(1)
+            detached = json.loads(self.execute(self.main, 'cat', '/workspace/progress.json').stdout)
+            child2, fd2 = attach(False)
+            drain(fd2, 1)
+            after = json.loads(self.execute(self.main, 'cat', '/workspace/progress.json').stdout)
+            child2.kill()  # Abrupt Docker client loss, separate from tmux detach.
+            child2.wait(timeout=3)
+            time.sleep(1)
+            disconnected = json.loads(self.execute(self.main, 'cat', '/workspace/progress.json').stdout)
+            child3, fd3 = attach(False)
+            drain(fd3, 1)
+            recovered = json.loads(self.execute(self.main, 'cat', '/workspace/progress.json').stdout)
+            os.write(fd3, b'\x03')
+            drain(fd3, 1)
+            interrupted = self.execute(self.main, 'cat', '/workspace/interrupted').stdout.strip()
+            screen = self.execute(self.main, 'tmux', 'capture-pane', '-p', '-t', 'matrix').stdout
+            observed = {'stty_size': size, 'before': before, 'detached': detached, 'reattached': after,
+                        'client_killed': disconnected, 'recovered': recovered, 'interrupt': interrupted, 'pane': screen}
+            self.log(observed)
+            states = [before, detached, after, disconnected, recovered]
+            ok = size == '39 100' and len({s['pid'] for s in states}) == 1 and all(a['tick'] < b['tick'] for a, b in zip(states, states[1:])) and interrupted == 'SIGINT_RECEIVED' and 'PROGRESS' in screen
+            return ok, json.dumps(observed), 0
+        finally:
+            for child, fd in clients:
+                if child.poll() is None:
+                    child.terminate()
+                    try:
+                        child.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        child.wait(timeout=3)
+                os.close(fd)
+
+    @staticmethod
+    def counters(text):
+        return dict((k, int(v)) for k, v in (line.split() for line in text.splitlines()))
+
+    def cpu(self):
+        cid = self.create('cpu', cpu='0.5')
+        code, stdout, samples = self.probe(cid, 'cpu.py')
+        start, end = samples[0], samples[-1]
+        a, b = self.counters(start['cpu.stat']), self.counters(end['cpu.stat'])
+        wall = end['at'] - start['at']
+        ratio = (b['usage_usec'] - a['usage_usec']) / 1e6 / wall
+        throttled = b['nr_throttled'] - a['nr_throttled']
+        observed = {'wall_seconds': wall, 'cpu_ratio': ratio, 'throttled_periods': throttled, 'cpu.max': start['cpu.max']}
+        return code == 0 and 'CPU_WORK_COMPLETE' in stdout and 0.35 <= ratio <= 0.65 and throttled > 0, json.dumps(observed), code
+
+    def memory(self):
+        cid = self.create('memory', memory='128m')
+        code, stdout, samples = self.probe(cid, 'memory.py')
+        state = self.inspect(cid, '.State')
+        counters = [self.counters(s['memory.events']) for s in samples if s['memory.events']]
+        oom = max(x.get('oom_kill', 0) for x in counters)
+        observed = {'exit_code': code, 'oom_kill_peak': oom, 'state': state,
+                    'memory.max': samples[0]['memory.max'], 'host_available_min_mib': min(s['host_available_mib'] for s in samples),
+                    'allocation_output': stdout}
+        self.log(observed)
+        passed = samples[0]['memory.max'] == str(128 * 1024 * 1024) and (state['OOMKilled'] or oom > 0 or 'MEMORY_ERROR' in stdout) and 'LIMIT_NOT_OBSERVED' not in stdout
+        return passed, json.dumps(observed), code
+
+    def pids(self):
+        observations = {}
+        for runtime in ('runsc', 'runc'):
+            cid = self.create('pids-' + runtime, pids='64', runtime=runtime)
+            code, stdout, samples = self.probe(cid, 'pids.py', artifact_suffix='-' + runtime)
+            rows = [line for line in stdout.splitlines() if line.startswith('{')]
+            parsed = json.loads(rows[-1]) if rows else {'guest_children': None, 'failure': None}
+            peak = max(int(s['pids.current']) for s in samples if s['pids.current'])
+            events = [self.counters(s['pids.events'])['max'] for s in samples if s['pids.events']]
+            observed = {**parsed, 'host_task_peak': peak, 'pids.max': samples[0]['pids.max'],
+                        'host_limit_events_delta': max(events) - min(events),
+                        'children_reaped': 'CHILDREN_REAPED' in stdout,
+                        'probe_exit_code': code, 'container_state': self.inspect(cid, '.State')}
+            self.dock('logs', cid, check=False)
+            observations[runtime] = observed
+        runsc = observations['runsc']
+        passed = runsc['probe_exit_code'] == 0 and runsc['failure'] is not None and runsc['guest_children'] < 64 and runsc['children_reaped']
+        return passed, json.dumps(observations), runsc['probe_exit_code']
+
+    def cleanup(self):
+        self.label = 'cleanup'
+        for entry in reversed(self.resources):
+            cid = entry['id']
+            if not cid:
+                # Interrupted create: recover only this intended name and label.
+                result = self.dock('ps', '-aq', '--filter', 'name=^/' + entry['name'] + '$', '--filter', 'label=sandbox.spike=' + self.run_id)
+                cid = result.stdout.strip()
+            if not cid:
+                continue
+            if self.inspect(cid, '.Config.Labels').get('sandbox.spike') != self.run_id:
+                raise RuntimeError('Cleanup label mismatch')
+            self.dock('rm', '-f', cid)
+            entry['removed'] = True
+            self.write('manifest.json', self.resources)
+        remaining = self.dock('ps', '-aq', '--filter', 'label=sandbox.spike=' + self.run_id).stdout.strip()
+        if remaining:
+            raise RuntimeError('Cleanup incomplete')
+        self.report['cleanup'] = {'status': 'verified', 'evidence': self.evidence(['cleanup.jsonl', 'manifest.json'])}
+
+    def run(self):
+        try:
+            self.main = self.create('main', cpu='2')
+            versions = self.execute(self.main, 'sh', '-c', 'claude --version; node --version; git --version; tmux -V').stdout.splitlines()
+            config = json.loads(Path('/etc/docker/daemon.json').read_text())['runtimes']['runsc']
+            self.report['environment'].update(host_alias='local-hyperv-spike', authorization_ref='user-authorized-local-vm-2026-09-26',
+                operator='Codex', kernel=platform.release(), arch=platform.machine(),
+                docker=self.dock('version', '--format', '{{.Server.Version}}').stdout.strip(),
+                runsc=self.command(['runsc', '--version']).stdout.strip(), runsc_platform='systrap' if '--platform=systrap' in config['runtimeArgs'] else 'unknown',
+                claude=versions[0], node=versions[1], git=versions[2], tmux=versions[3],
+                cgroup=self.dock('info', '--format', '{{.CgroupVersion}}/{{.CgroupDriver}}').stdout.strip(), image_pin=self.args.image,
+                limits_and_headroom=f'policy.json; initial available {available_mib()} MiB; one resource probe at a time',
+                model_budget='No paid calls authorized for this run; 0 calls', credential_delivery_ref='Not configured; no credentials injected')
+            self.write('environment.json', self.report['environment'])
+            self.execute(self.main, 'sh', '-c', 'npm --version; cat /usr/local/share/diagnostic-dpkg.txt; sha256sum /usr/local/bin/node /usr/local/bin/claude')
+            pre = self.command(['python3', str(ROOT / 'scripts/gvisor-preflight.py'), '--docker-socket', 'unix:///var/run/docker.sock', '--image', self.args.image])
+            self.write('preflight.json', json.loads(pre.stdout))
+            self.report['preflight'] = {'verdict': json.loads(pre.stdout)['verdict'], 'evidence': self.evidence(['preflight.json'])}
+            for key, expected, method in [
+                ('E01', 'runsc process, systrap flags and runtime inspect match', self.runtime),
+                ('E02', 'UID 1000 and SHELL_OK', self.shell),
+                ('E03', 'Public fixture commit and hashes match', self.repo),
+                ('E04', 'Pinned lockfile installs and tests exit 0', self.package),
+                ('E06', 'non-root ptmx; PTY resize; signal; detached progress; reattach same PID', self.terminal),
+                ('E07', '0.5 CPU; measured ratio 0.35..0.65 and throttling', self.cpu),
+                ('E08', '128 MiB limit causes bounded allocation rejection or container OOM', self.memory),
+                ('E09', '64 PID limit rejects bounded guest forks; host/guest distinction recorded', self.pids),
+            ]:
+                if key in self.args.cases:
+                    self.case(key, expected, method)
+            self.label = 'environment-end'
+            end = {'kernel': platform.release(),
+                   'docker': self.dock('version', '--format', '{{.Server.Version}}').stdout.strip(),
+                   'runsc': self.command(['runsc', '--version']).stdout.strip(),
+                   'claude': self.version(),
+                   'image_pin': self.dock('image', 'inspect', self.args.image, '--format', '{{.Id}}').stdout.strip()}
+            self.write('environment-end.json', end)
+            if any(value != self.report['environment'][key] for key, value in end.items()):
+                for row in self.report['cases']:
+                    if row['status'] == 'pass':
+                        row.update(status='fail', observed=row['observed'] + '; ENVIRONMENT DRIFT: rerun required')
+        finally:
+            self.cleanup()
+            self.write('report.json', self.report)
+        result, code = report_module.check(self.report, self.out)
+        self.write('completeness.json', result)
+        print(json.dumps(result), flush=True)
+        return code  # Expected 2: E05 and E10 were intentionally not executed.
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--image', required=True)
+    parser.add_argument('--pty-image', required=True, help='Pinned Alpine image ID for upstream ptmx comparison')
+    parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--redact', action='append', metavar='VALUE',
+                        help='Literal value to mask in evidence. Repeatable. Prefer a file or '
+                             'env var over a shell argument, which lands in shell history.')
+    parser.add_argument('--redact-file', type=Path, metavar='PATH',
+                        help='File of literal secrets to mask, one per line.')
+    parser.add_argument('--cases', nargs='+', choices=['E01', 'E02', 'E03', 'E04', 'E06', 'E07', 'E08', 'E09'],
+                        default=['E01', 'E02', 'E03', 'E04', 'E06', 'E07', 'E08', 'E09'])
+    args = parser.parse_args()
+    if args.redact_file:
+        args.redact = (args.redact or []) + [line.strip() for line in
+                                             args.redact_file.read_text().splitlines() if line.strip()]
+    if platform.system() != 'Linux' or os.geteuid() != 0:
+        parser.error('Run on the authorized dedicated Linux host as root')
+    if not all(re.fullmatch(r'sha256:[0-9a-f]{64}', value) for value in (args.image, args.pty_image)):
+        parser.error('An immutable local image ID is required')
+    if available_mib() < 4096:
+        parser.error('At least 4 GiB host available memory is required')
+    return Matrix(args).run()
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

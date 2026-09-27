@@ -29,7 +29,7 @@ SHAPES = (
 ASSIGNMENT = re.compile(
     r'(?i)(?P<name>[A-Za-z0-9_.\-]*(?:api[_-]?key|auth[_-]?token|access[_-]?token|secret|password|'
     r'passwd|credential|bearer|private[_-]?key|session[_-]?token)[A-Za-z0-9_.\-]*)'
-    r'(?P<sep>"?\s*[=:]\s*|\s+)(?P<value>"[^"]*"|\'[^\']*\'|\S+)')
+    r'(?P<sep>"?\s*[=:]\s*|\s+)(?P<value>&\{Uid:\d+ Gid:\d+ Groups:\[[\d ]*\] NoSetGroups:(?:true|false)\}|"[^"]*"|\'[^\']*\'|\S+)')
 # Values shorter than this are too generic to mask safely (e.g. "none", "0").
 MIN_VALUE = 6
 # Literals that are never secrets, so masking them only destroys evidence.
@@ -82,6 +82,13 @@ class Redactor:
             value = shape.sub(MASK, value)
 
         def assignment(match):
+            line_prefix=value[value.rfind('\n',0,match.start())+1:match.start()]
+            if (match.group('name') == 'Credential' and 'SysProcAttr: &{' in line_prefix
+                    and re.fullmatch(r'0x[0-9a-fA-F]+', match.group('value'))):
+                return match.group(0)  # Printed Go pointer in a known OS struct.
+            if match.group('name') == 'Credential' and re.fullmatch(
+                    r'&\{Uid:\d+ Gid:\d+ Groups:\[[\d ]*\] NoSetGroups:(?:true|false)\}', match.group('value')):
+                return match.group(0)  # Go's numeric OS identity, not a secret value.
             if _kept_name(match.group('name')) or _keep(match.group('value')):
                 return match.group(0)
             return match.group('name') + match.group('sep') + MASK
