@@ -19,6 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--image',required=True)
     parser.add_argument('--output',required=True,type=Path)
+    parser.add_argument('--source-commit',required=True)
     parser.add_argument('--modes',nargs='+',choices=['as','data','none','as-multi'],default=['as','data','none'])
     args = parser.parse_args()
     if not args.image.startswith('sha256:'):
@@ -28,11 +29,13 @@ def main():
     rows = []
     volumes = []
     m.write('memory-policy.json', {'issue':67,'modes':args.modes, 'guest_limit_mib':96,
+        'source_commit':args.source_commit,'source_transport':'git archive',
         'host_memory_mib':256,'max_touched_mib':512,'cpus':2,'pids':512,'model_calls':0,
         'scope':'rlimit applies to the allocator child, not aggregate sandbox memory',
         'sampling':'1 ms snapshots plus POLLPRI memory.events notifications'})
     files = [Path(__file__),ROOT/'diagnostics/gvisor/probes/memory-session.py']
-    m.write('memory-source.json',{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files})
+    sources=files+[ROOT/'scripts'/n for n in ['gvisor-no-key-matrix.py','gvisor_redact.py','gvisor-publish-evidence.py','gvisor-report.py']]
+    m.write('memory-source.json',{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     try:
         for command in [['uname','-a'],['docker','version'],['runsc','--version'],['cat','/etc/docker/daemon.json']]:
             m.command(command)
@@ -59,11 +62,13 @@ def main():
                 m.write('manifest.json',m.resources)
                 m.dock('start',cid)
                 cg = m.cgroup(cid)
+                identity={'container':cid,'cgroup_inode':cg.stat().st_ino,'started_at':m.inspect(cid,'.State.StartedAt')}
                 m.dock('cp',str(files[1]),cid+':/workspace/memory-session.py')
                 m.execute(cid,'tmux','new-session','-d','-s','work',
                     'python3 -c "import time; from pathlib import Path; [(Path(\'/workspace/heartbeat\').write_text(str(i)), time.sleep(.1)) for i in range(1200)]"')
                 time.sleep(.5)
                 row = {'runtime':runtime,'mode':mode,'started':mod.now()}
+                row['cgroup_instance']=identity
                 if mode == 'as-multi':
                     smoke = m.execute(cid,'python3','-c',
                         'import os,resource; resource.setrlimit(resource.RLIMIT_CORE,(0,0)); resource.setrlimit(resource.RLIMIT_AS,(100663296,100663296)); os.execvp("node",["node","-e","console.log(123)"])',
@@ -74,7 +79,17 @@ def main():
                 stop = threading.Event()
                 def sampling():
                     while not stop.is_set():
-                        samples.append(m.stats(cg))
+                        try:
+                            if cg.stat().st_ino != identity['cgroup_inode']:
+                                samples.append({'at':time.monotonic(),'instance':identity,'error':'cgroup_replaced'})
+                                break
+                            sample=m.stats(cg)
+                            if sample['memory.current'] is None:
+                                sample['error']='memory_counter_unavailable'
+                            samples.append({**sample,'instance':identity})
+                        except OSError as error:
+                            samples.append({'at':time.monotonic(),'instance':identity,'error':repr(error)})
+                            break
                         time.sleep(.001)
                 def events():
                     try:
@@ -83,10 +98,10 @@ def main():
                             poller.register(f,select.POLLPRI|select.POLLERR)
                             while not stop.is_set():
                                 f.seek(0)
-                                event_samples.append({'at':time.monotonic(),'events':f.read()})
+                                event_samples.append({'at':time.monotonic(),'instance':identity,'events':f.read()})
                                 poller.poll(10)
                     except OSError as error:
-                        event_samples.append({'error':str(error)})
+                        event_samples.append({'at':time.monotonic(),'instance':identity,'error':str(error)})
                 samplers = [threading.Thread(target=sampling),threading.Thread(target=events)]
                 for thread in samplers:
                     thread.start()
@@ -114,7 +129,15 @@ def main():
                     row['recovery'] = {'exit':r.returncode,'stdout':r.stdout,'stderr':r.stderr}
                     row['tmux_after'] = m.execute(cid,'tmux','has-session','-t','work',check=False).returncode
                     if not row['inspect']['State']['Running']:
+                        # Freeze the dead instance's evidence before Docker recreates
+                        # a cgroup at the same path with counters reset to zero.
+                        stop.set()
+                        for thread in samplers:
+                            thread.join()
                         m.dock('start',cid)
+                        restarted=m.cgroup(cid)
+                        row['restarted_cgroup']={'inode':restarted.stat().st_ino,'stats':m.stats(restarted),
+                            'started_at':m.inspect(cid,'.State.StartedAt')}
                         row['restart_tmux'] = m.execute(cid,'tmux','has-session','-t','work',check=False).returncode
                         r = m.execute(cid,'sh','-c','printf RESTART_EXEC_OK',check=False)
                         row['restart'] = {'exit':r.returncode,'stdout':r.stdout}
