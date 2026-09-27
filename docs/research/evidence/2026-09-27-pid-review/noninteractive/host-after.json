@@ -1,0 +1,48 @@
+[
+  {
+    "command": [
+      "docker",
+      "ps",
+      "-aq"
+    ],
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "docker",
+      "version"
+    ],
+    "exit": 0,
+    "stdout": "Client: Docker Engine - Community\n Version:           29.8.1\n API version:       1.56\n Go version:        go1.26.8\n Git commit:        4a63305\n Built:             Tue Sep 15 16:26:01 2026\n OS/Arch:           linux/amd64\n Context:           default\n\nServer: Docker Engine - Community\n Engine:\n  Version:          29.8.1\n  API version:      1.56 (minimum version 1.40)\n  Go version:       go1.26.8\n  Git commit:       464cd50\n  Built:            Tue Sep 15 16:26:01 2026\n  OS/Arch:          linux/amd64\n  Experimental:     false\n containerd:\n  Version:          v2.3.6\n  GitCommit:        ee2735368117d2eb259779949d5e75cdafec9761\n runc:\n  Version:          1.5.1\n  GitCommit:        v1.5.1-0-g8f2685a4\n docker-init:\n  Version:          0.19.0\n  GitCommit:        de40ad0\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "runsc",
+      "--version"
+    ],
+    "exit": 0,
+    "stdout": "runsc version release-20260921.0\nspec: 1.2.1\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "uname",
+      "-a"
+    ],
+    "exit": 0,
+    "stdout": "Linux sandbox-spike 6.8.0-142-generic #142-Ubuntu SMP PREEMPT_DYNAMIC Wed Sep  2 14:24:27 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "cat",
+      "/etc/docker/daemon.json"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"runtimes\": {\n    \"runsc\": {\n      \"path\": \"/usr/bin/runsc\",\n      \"runtimeArgs\": [\n        \"--platform=systrap\"\n      ]\n    }\n  },\n  \"log-driver\": \"local\",\n  \"log-opts\": {\n    \"max-size\": \"10m\",\n    \"max-file\": \"3\"\n  }\n}\n",
+    "stderr": ""
+  }
+]

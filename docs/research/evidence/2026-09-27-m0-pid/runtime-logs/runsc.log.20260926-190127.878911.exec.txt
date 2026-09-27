@@ -1,0 +1,133 @@
+I0926 19:01:27.882283   28749 cli.go:275] **************** gVisor ****************
+I0926 19:01:27.882305   28749 cli.go:276] Version release-20260921.0, go1.26.3, amd64, 4 CPUs, linux, PID 28749, PPID 28731, UID 0, GID 0
+D0926 19:01:27.882311   28749 cli.go:277] Page size: 0x1000 (4096 bytes)
+I0926 19:01:27.882316   28749 cli.go:278] Args: [runsc-exec --platform=systrap --debug --debug-log=/var/log/runsc-70/ --root /var/run/docker/runtime-runc/moby --log /run/containerd/io.containerd.runtime.v2.task/moby/acd93a30e1d2cacc1b1e58210d94180ce8b604809d2c5b0f5633932353248273/log.json --log-format json --systemd-cgroup exec --process /tmp/runc-process2327836309 --pid-file /run/containerd/io.containerd.runtime.v2.task/moby/acd93a30e1d2cacc1b1e58210d94180ce8b604809d2c5b0f5633932353248273/8aeff2a17eef2b55405a090e7282db0c44962cbbc8f1781f1ee24922757c21be.pid acd93a30e1d2cacc1b1e58210d94180ce8b604809d2c5b0f5633932353248273]
+I0926 19:01:27.882330   28749 config.go:558] Platform: systrap
+I0926 19:01:27.882334   28749 config.go:559] RootDir: /var/run/docker/runtime-runc/moby
+I0926 19:01:27.882336   28749 config.go:560] FileAccess: exclusive / Directfs: true / Overlay: root:self
+I0926 19:01:27.882340   28749 config.go:561] Network: sandbox
+I0926 19:01:27.882343   28749 config.go:562] UseCPUNums: false
+I0926 19:01:27.882345   28749 config.go:564] Debug: true. Strace: false, max size: 1024, syscalls: 
+W0926 19:01:27.882347   28749 config.go:567] --allow-suid is disabled, SUID/SGID bits on executables will be ignored.
+D0926 19:01:27.882349   28749 config.go:585] Config.RootDir (--root): /var/run/docker/runtime-runc/moby
+D0926 19:01:27.882352   28749 config.go:585] Config.Traceback (--traceback): system
+D0926 19:01:27.882355   28749 config.go:585] Config.Debug (--debug): true
+D0926 19:01:27.882356   28749 config.go:585] Config.LogFilename (--log): /run/containerd/io.containerd.runtime.v2.task/moby/acd93a30e1d2cacc1b1e58210d94180ce8b604809d2c5b0f5633932353248273/log.json
+D0926 19:01:27.882379   28749 config.go:585] Config.LogFormat (--log-format): json
+D0926 19:01:27.882382   28749 config.go:585] Config.DebugLog (--debug-log): /var/log/runsc-70/
+D0926 19:01:27.882385   28749 config.go:585] Config.DebugToUserLog (--debug-to-user-log): false
+D0926 19:01:27.882387   28749 config.go:585] Config.DebugCommand (--debug-command): (empty)
+D0926 19:01:27.882388   28749 config.go:585] Config.PanicLog (--panic-log): (empty)
+D0926 19:01:27.882389   28749 config.go:585] Config.CoverageReport (--coverage-report): (empty)
+D0926 19:01:27.882391   28749 config.go:585] Config.DebugLogFormat (--debug-log-format): text
+D0926 19:01:27.882393   28749 config.go:585] Config.FileAccess (--file-access): exclusive
+D0926 19:01:27.882400   28749 config.go:585] Config.FileAccessMounts (--file-access-mounts): shared
+D0926 19:01:27.882402   28749 config.go:585] Config.Overlay (--overlay): false
+D0926 19:01:27.882405   28749 config.go:585] Config.Overlay2 (--overlay2): root:self
+D0926 19:01:27.882407   28749 config.go:585] Config.FSGoferHostUDS (--fsgofer-host-uds): false
+D0926 19:01:27.882409   28749 config.go:585] Config.HostUDS (--host-uds): none
+D0926 19:01:27.882414   28749 config.go:585] Config.HostFifo (--host-fifo): none
+D0926 19:01:27.882416   28749 config.go:585] Config.CharacterDevicePolicy (--character-device-policy): emulated-only
+D0926 19:01:27.882418   28749 config.go:585] Config.HostSettings (--host-settings): check
+D0926 19:01:27.882420   28749 config.go:585] Config.Network (--network): sandbox
+D0926 19:01:27.882422   28749 config.go:585] Config.GoferNetworkNamespace (--gofer-network-namespace): null
+D0926 19:01:27.882424   28749 config.go:585] Config.EnableRaw (--net-raw): false
+D0926 19:01:27.882426   28749 config.go:585] Config.AllowPacketEndpointWrite (--allow-packet-socket-write): false
+D0926 19:01:27.882428   28749 config.go:585] Config.AllowLiveTCPMigration (--allow-live-tcp-migration): true
+D0926 19:01:27.882430   28749 config.go:585] Config.SignalUnkillablePolicy (--signal-unkillable-policy): none
+D0926 19:01:27.882432   28749 config.go:585] Config.HostGSO (--gso): true
+D0926 19:01:27.882437   28749 config.go:585] Config.GVisorGSO (--software-gso): true
+D0926 19:01:27.882439   28749 config.go:585] Config.GVisorGRO (--gvisor-gro): false
+D0926 19:01:27.882441   28749 config.go:585] Config.TXChecksumOffload (--tx-checksum-offload): false
+D0926 19:01:27.882442   28749 config.go:585] Config.RXChecksumOffload (--rx-checksum-offload): true
+D0926 19:01:27.882444   28749 config.go:585] Config.QDisc (--qdisc): fifo
+D0926 19:01:27.882446   28749 config.go:585] Config.TBFRate (--qdisc-tbf-rate): 0
+D0926 19:01:27.882448   28749 config.go:585] Config.TBFBurst (--qdisc-tbf-burst): 0
+D0926 19:01:27.882450   28749 config.go:585] Config.LogPackets (--log-packets): false
+D0926 19:01:27.882451   28749 config.go:585] Config.PCAP (--pcap-log): (empty)
+D0926 19:01:27.882453   28749 config.go:585] Config.Platform (--platform): systrap
+D0926 19:01:27.882454   28749 config.go:585] Config.PlatformDevicePath (--platform_device_path): (empty)
+D0926 19:01:27.882456   28749 config.go:585] Config.MetricServer (--metric-server): (empty)
+D0926 19:01:27.882457   28749 config.go:585] Config.SidecarReleaseEnforcementPolicy (--sidecar-release-enforcement-policy): IF_RELEASE_BUILD
+D0926 19:01:27.882459   28749 config.go:585] Config.SidecarUsagePolicy (--sidecar-usage-policy): DEFAULT
+D0926 19:01:27.882462   28749 config.go:585] Config.FinalMetricsLog (--final-metrics-log): (empty)
+D0926 19:01:27.882463   28749 config.go:585] Config.ProfilingMetrics (--profiling-metrics): (empty)
+D0926 19:01:27.882465   28749 config.go:585] Config.ProfilingMetricsLog (--profiling-metrics-log): (empty)
+D0926 19:01:27.882469   28749 config.go:585] Config.ProfilingMetricsRate (--profiling-metrics-rate-us): 1000
+D0926 19:01:27.882472   28749 config.go:585] Config.Strace (--strace): false
+D0926 19:01:27.882474   28749 config.go:585] Config.StraceSyscalls (--strace-syscalls): (empty)
+D0926 19:01:27.882476   28749 config.go:585] Config.StraceLogSize (--strace-log-size): 1024
+D0926 19:01:27.882477   28749 config.go:585] Config.StraceEvent (--strace-event): false
+D0926 19:01:27.882478   28749 config.go:587] Config.DisableSeccomp: false
+D0926 19:01:27.882480   28749 config.go:585] Config.EnableCoreTags (--enable-core-tags): false
+D0926 19:01:27.882482   28749 config.go:585] Config.WatchdogAction (--watchdog-action): log
+D0926 19:01:27.882484   28749 config.go:585] Config.PanicSignal (--panic-signal): -1
+D0926 19:01:27.882485   28749 config.go:585] Config.ProfileEnable (--profile): false
+D0926 19:01:27.882487   28749 config.go:585] Config.ProfileBlock (--profile-block): (empty)
+D0926 19:01:27.882488   28749 config.go:585] Config.ProfileCPU (--profile-cpu): (empty)
+D0926 19:01:27.882489   28749 config.go:585] Config.ProfileGCInterval (--profile-gc-interval): 0s
+D0926 19:01:27.882492   28749 config.go:585] Config.ProfileHeap (--profile-heap): (empty)
+D0926 19:01:27.882493   28749 config.go:585] Config.ProfileMutex (--profile-mutex): (empty)
+D0926 19:01:27.882495   28749 config.go:585] Config.TraceFile (--trace): (empty)
+D0926 19:01:27.882496   28749 config.go:585] Config.NumNetworkChannels (--num-network-channels): 1
+D0926 19:01:27.882498   28749 config.go:585] Config.NetworkProcessorsPerChannel (--network-processors-per-channel): 0
+D0926 19:01:27.882499   28749 config.go:585] Config.Rootless (--rootless): false
+D0926 19:01:27.882500   28749 config.go:585] Config.AlsoLogToStderr (--alsologtostderr): false
+D0926 19:01:27.882502   28749 config.go:585] Config.ReferenceLeak (--ref-leak-mode): disabled
+D0926 19:01:27.882504   28749 config.go:585] Config.CPUNumFromQuota (--cpu-num-from-quota): true
+D0926 19:01:27.882506   28749 config.go:585] Config.AllowFlagOverride (--allow-flag-override): false
+D0926 19:01:27.882507   28749 config.go:585] Config.OCISeccomp (--oci-seccomp): false
+D0926 19:01:27.882509   28749 config.go:585] Config.IgnoreCgroups (--ignore-cgroups): false
+D0926 19:01:27.882510   28749 config.go:585] Config.InSandboxCgroup (--in-sandbox-cgroup): v1
+D0926 19:01:27.882513   28749 config.go:585] Config.SystemdCgroup (--systemd-cgroup): true
+D0926 19:01:27.882515   28749 config.go:585] Config.PodInitConfig (--pod-init-config): (empty)
+D0926 19:01:27.882517   28749 config.go:585] Config.XDP (--EXPERIMENTAL-xdp): {0 }
+D0926 19:01:27.882520   28749 config.go:585] Config.AFXDPUseNeedWakeup (--EXPERIMENTAL-xdp-need-wakeup): true
+D0926 19:01:27.882521   28749 config.go:585] Config.FDLimit (--fdlimit): -1
+D0926 19:01:27.882523   28749 config.go:585] Config.DCache (--dcache): -1
+D0926 19:01:27.882524   28749 config.go:585] Config.IOUring (--iouring): false
+D0926 19:01:27.882525   28749 config.go:585] Config.DirectFS (--directfs): true
+D0926 19:01:27.882533   28749 config.go:585] Config.AppHugePages (--app-huge-pages): true
+D0926 19:01:27.882534   28749 config.go:585] Config.NVProxy (--nvproxy): false
+D0926 19:01:27.882535   28749 config.go:585] Config.NVProxyDocker (--nvproxy-docker): false
+D0926 19:01:27.882537   28749 config.go:585] Config.NVProxyDriverVersion (--nvproxy-driver-version): (empty)
+D0926 19:01:27.882538   28749 config.go:585] Config.NVProxyAllowedDriverCapabilities (--nvproxy-allowed-driver-capabilities): utility,compute
+D0926 19:01:27.882540   28749 config.go:585] Config.NVProxyAllowUnsupportedDriver (--nvproxy-allow-unsupported-driver): false
+D0926 19:01:27.882541   28749 config.go:585] Config.TPUProxy (--tpuproxy): false
+D0926 19:01:27.882543   28749 config.go:585] Config.RDMAProxy (--rdmaproxy): false
+D0926 19:01:27.882544   28749 config.go:585] Config.TestOnlyAllowRunAsCurrentUserWithoutChroot (--TESTONLY-unsafe-nonroot): false
+D0926 19:01:27.882546   28749 config.go:585] Config.TestOnlyTestNameEnv (--TESTONLY-test-name-env): (empty)
+D0926 19:01:27.882547   28749 config.go:585] Config.TestOnlyAFSSyscallPanic (--TESTONLY-afs-syscall-panic): false
+D0926 19:01:27.882549   28749 config.go:587] Config.explicitlySet: <map[string]struct {} Value> (unexported)
+D0926 19:01:27.882551   28749 config.go:585] Config.ReproduceNAT (--reproduce-nat): false
+D0926 19:01:27.882553   28749 config.go:585] Config.ReproduceNftables (--reproduce-nftables): false
+D0926 19:01:27.882554   28749 config.go:585] Config.NetDisconnectOk (--net-disconnect-ok): true
+D0926 19:01:27.882556   28749 config.go:585] Config.TestOnlyAutosaveImagePath (--TESTONLY-autosave-image-path): (empty)
+D0926 19:01:27.882557   28749 config.go:585] Config.TestOnlyAutosaveResume (--TESTONLY-autosave-resume): false
+D0926 19:01:27.882559   28749 config.go:585] Config.RestoreSpecValidation (--restore-spec-validation): enforce
+D0926 19:01:27.882561   28749 config.go:585] Config.GVisorMarkerFile (--gvisor-marker-file): false
+D0926 19:01:27.882566   28749 config.go:585] Config.OverrideProcs (--override-procs): (empty)
+D0926 19:01:27.882567   28749 config.go:585] Config.SystrapDisableSyscallPatching (--systrap-disable-syscall-patching): false
+D0926 19:01:27.882569   28749 config.go:585] Config.SystrapDisableFastPath (--systrap-disable-fast-path): false
+D0926 19:01:27.882570   28749 config.go:585] Config.Nftables (--TESTONLY-nftables): false
+D0926 19:01:27.882572   28749 config.go:585] Config.AllowSUID (--allow-suid): false
+D0926 19:01:27.882573   28749 config.go:585] Config.UseCPUNums (--kvm-use-cpu-nums): false
+D0926 19:01:27.882575   28749 config.go:585] Config.PauseExternalNetworking (--pause-external-networking): false
+D0926 19:01:27.882576   28749 config.go:585] Config.AllowConnectedOnSave (--allow-connected-on-save): false
+D0926 19:01:27.882578   28749 config.go:585] Config.AllowRootfsTarAnnotation (--allow-rootfs-tar-annotation): false
+D0926 19:01:27.882579   28749 config.go:585] Config.ControlRPCStopTimeout (--control-rpc-stop-timeout): 15s
+D0926 19:01:27.882581   28749 config.go:585] Config.SharedRootDir (--shared-root): (empty)
+D0926 19:01:27.882583   28749 cli.go:284] runsc process spawned at 19:01:27.878911, Go started execution at 19:01:27.880649. Startup overhead: 1.738193ms
+I0926 19:01:27.882588   28749 cli.go:287] **************** gVisor ****************
+D0926 19:01:27.882619   28749 exec.go:140] Exec arguments: sh -c printf FULL_EXEC_OK
+D0926 19:01:27.882631   28749 exec.go:141] Exec capabilities: &{PermittedCaps:0 InheritableCaps:0 EffectiveCaps:0 BoundingCaps:0 AmbientCaps:0}
+D0926 19:01:27.882637   28749 container.go:629] Execute in container, cid: acd93a30e1d2cacc1b1e58210d94180ce8b604809d2c5b0f5633932353248273, args: sh -c printf FULL_EXEC_OK
+D0926 19:01:27.882643   28749 sandbox.go:780] Executing new process in container "acd93a30e1d2cacc1b1e58210d94180ce8b604809d2c5b0f5633932353248273" in sandbox "acd93a30e1d2cacc1b1e58210d94180ce8b604809d2c5b0f5633932353248273"
+D0926 19:01:27.882648   28749 sandbox.go:2467] Changing "/dev/stdin" ownership to 0/0
+D0926 19:01:27.882651   28749 sandbox.go:2467] Changing "/dev/stdout" ownership to 0/0
+D0926 19:01:27.882653   28749 sandbox.go:2467] Changing "/dev/stderr" ownership to 0/0
+D0926 19:01:27.882655   28749 sandbox.go:862] Connecting to sandbox "acd93a30e1d2cacc1b1e58210d94180ce8b604809d2c5b0f5633932353248273"
+D0926 19:01:27.882755   28749 urpc.go:600] urpc: successfully marshalled 811 bytes.
+D0926 19:01:27.883157   28749 urpc.go:643] urpc: unmarshal success.
+W0926 19:01:27.883171   28749 util.go:107] FATAL ERROR: executing processes for container: executing command "sh -c printf FULL_EXEC_OK" in sandbox: try again
+W0926 19:01:27.883191   28749 cli.go:326] Failure to execute command, err: 1
