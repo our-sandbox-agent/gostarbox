@@ -63,6 +63,12 @@ class RedactTests(unittest.TestCase):
         text = 'sandbox.go:1433] SysProcAttr: &{Chroot: Credential:<nil> Ptrace:false Setsid:true}'
         self.assertEqual(Redactor().scrub(text), text)
 
+    def test_go_numeric_credential_struct_preserved_but_secret_still_masked(self):
+        text = 'SysProcAttr: &{Credential:&{Uid:0 Gid:0 Groups:[] NoSetGroups:false} Ptrace:false}'
+        self.assertEqual(Redactor().text(text), text)
+        self.assertNotIn('opaque-sensitive-value', Redactor().text('Credential:opaque-sensitive-value'))
+        self.assertEqual(Redactor().text('password:&{Uid:0 Gid:0 Groups:[] NoSetGroups:false}'), 'password:'+MASK)
+
     def test_short_and_literal_values_are_not_masked(self):
         for text in ['credentials_injected: false', 'secret: none', 'password=1']:
             with self.subTest(text=text):
