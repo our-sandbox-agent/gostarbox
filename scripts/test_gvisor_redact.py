@@ -69,6 +69,11 @@ class RedactTests(unittest.TestCase):
         self.assertNotIn('opaque-sensitive-value', Redactor().text('Credential:opaque-sensitive-value'))
         self.assertEqual(Redactor().text('password:&{Uid:0 Gid:0 Groups:[] NoSetGroups:false}'), 'password:'+MASK)
 
+    def test_go_sysprocattr_credential_pointer_is_not_an_opaque_secret(self):
+        text = 'SysProcAttr: &{Chroot: Credential:0xc9e0d73a660 Ptrace:false}'
+        self.assertEqual(Redactor().text(text), text)
+        self.assertEqual(Redactor().text('Credential:0xc9e0d73a660'), 'Credential:'+MASK)
+
     def test_short_and_literal_values_are_not_masked(self):
         for text in ['credentials_injected: false', 'secret: none', 'password=1']:
             with self.subTest(text=text):

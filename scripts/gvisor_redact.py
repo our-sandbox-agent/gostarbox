@@ -82,6 +82,10 @@ class Redactor:
             value = shape.sub(MASK, value)
 
         def assignment(match):
+            line_prefix=value[value.rfind('\n',0,match.start())+1:match.start()]
+            if (match.group('name') == 'Credential' and 'SysProcAttr: &{' in line_prefix
+                    and re.fullmatch(r'0x[0-9a-fA-F]+', match.group('value'))):
+                return match.group(0)  # Printed Go pointer in a known OS struct.
             if match.group('name') == 'Credential' and re.fullmatch(
                     r'&\{Uid:\d+ Gid:\d+ Groups:\[[\d ]*\] NoSetGroups:(?:true|false)\}', match.group('value')):
                 return match.group(0)  # Go's numeric OS identity, not a secret value.
