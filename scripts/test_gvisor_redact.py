@@ -73,7 +73,7 @@ class RedactTests(unittest.TestCase):
         text = 'SysProcAttr: &{Chroot: Credential:0xc9e0d73a660 Ptrace:false}'
         self.assertEqual(Redactor().text(text), text)
         self.assertEqual(Redactor().text('Credential:0xc9e0d73a660'), 'Credential:'+MASK)
-        self.assertEqual(Redactor().text('SysProcAttr: &{password:0xc9e0d73a660}'), 'SysProcAttr: &{password:'+MASK+'}')
+        self.assertEqual(Redactor().text('SysProcAttr: &{password:0xc9e0d73a660 Ptrace:false}'), 'SysProcAttr: &{password:'+MASK+' Ptrace:false}')
         self.assertNotIn('opaque-sensitive-value', Redactor().text('SysProcAttr: &{Credential:opaque-sensitive-value}'))
 
     def test_short_and_literal_values_are_not_masked(self):
