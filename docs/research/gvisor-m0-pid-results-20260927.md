@@ -1,100 +1,109 @@
-# #70 remaining PID matrix: decision and evidence
+# #70 remaining PID matrix: corrected decision and evidence
 
-**Decision: candidate configurations measured; NO-GO against the complete current
-trial gate.** Forking external commands at fully consumed guest quota fails even
-from an existing shell. Rejection and recovery work, but that is a narrower
-promise. See [proposed decision](../adr/pid-trial-candidate.md). #8/#10/#11 gates
-are unchanged. No paid model or Claude task was executed.
+**GO-candidate for guest rejection/recovery; trial release remains blocked by
+separate session, containment and product gates.** The prior NO-GO used a
+contradictory acceptance criterion, now corrected in #70. A full workload UID
+rejecting new tasks is the expected result, not a reason to switch runtime.
+See [Proposed ADR](../adr/pid-trial-candidate.md). No paid Claude task was run.
 
-## Final experiment
+## Review rerun
 
-Eight sequential cases on the existing dedicated 4-vCPU/8-GiB VM. Each case uses
-2 GiB memory, equal soft/hard NPROC, UID 1000, dropped capabilities and
-no-new-privileges. Runtime/image/kernel remain the recorded #63 versions:
-runsc release-20260921.0 / systrap, Docker 29.8.1, kernel 6.8.0-142-generic,
-image `sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf`.
-Versions, actual CPU/memory limits, cgroup observations and time boundaries are
-recorded in the published bundle, not inferred from package holds.
+Eight interactive cases plus one explicit noninteractive case ran on the existing
+4-vCPU/8-GiB VM: kernel 6.8.0-142-generic, Docker 29.8.1, runsc
+release-20260921.0/systrap. Image:
+`sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf`.
+Each has 2 GiB memory, UID1000, cap-drop ALL, no-new-privileges, NPROC N/N.
+Node runs eight Worker threads under tmux; npm ci uses the recorded fixture
+lockfile with lifecycle scripts disabled. This is not a representative large build.
 
-| CPU | Guest tasks N | Host cap H | Thread-pressure host peak | Fork-pressure host peak |
+Host samples now label workload, pressure allocation, full quota and recovery.
+The full phase includes the management/concurrent exec checks; recovery is excluded
+from both peak columns below. Peaks are sampled values, not guaranteed maxima.
+
+| CPU | N | H=2N+128 | Pressure threads / fork | Full threads / fork |
 | ---: | ---: | ---: | ---: | ---: |
-| 2 | 64 | 448 | 49 | 132 |
-| 2 | 128 | 832 | 48 | 263 |
-| 4 | 64 | 704 | 51 | 141 |
-| 4 | 128 | 1344 | 48 | 269 |
+| 2 | 64 | 256 | 45 / 133 | 53 / 143 |
+| 2 | 128 | 384 | 46 / 263 | 50 / 271 |
+| 4 | 64 | 256 | 50 / 137 | 62 / 145 |
+| 4 | 128 | 384 | 51 / 263 | 55 / 274 |
 
-Candidate formula is `H = 2 × N × (C + 1) + 64`: allow up to C+1 runtime executor
-tasks per guest task, apply a factor of two, then add 64 fixed tasks. This is a
-conservative allocation hypothesis supported only for these workloads/profiles,
-not a derived exact ratio or a guarantee for all systrap paths. Samples show why
-guest threads and forked address spaces cannot be assigned a single observed
-host-task multiplier. Do not extrapolate to fractional CPUs or multi-sandbox
-admission without accounting for runtime minimum CPU settings and host capacity.
+The old `2*N*(C+1)+64` formula is withdrawn: CPU2/4 did not justify its multiplier.
+The old CPU4 thread pressure peaks were **50 and 46**, not 51 and 48 (those included
+post-pressure samples). Historical bundles remain available with this correction.
+The new lower caps are tested candidates, not a host-boundary or multi-sandbox
+capacity proof. Original caps were roughly 3.2–5 times fork peaks; reservation
+cost must be measured against admission needs rather than presented as necessary.
 
-All eight cases first start a tmux session with Node's eight Worker threads and
-a continuously updated heartbeat, then complete `npm ci --ignore-scripts` using
-the pinned repository lockfile. Guest baseline per-process task counts are saved.
-The bounded Python pressure workload then creates threads or forked children
-until the guest count reaches exactly N. Thread creation returns Python's
-`can't start new thread`; fork returns errno 11/EAGAIN. The Node workers continue
-during pressure. This is a mixed Node/npm/tmux workload, not a paid Claude task or
-a representative large native build; npm lifecycle scripts are intentionally skipped.
+All eight interactive cases reached exactly N tasks and refused further creation
+(thread RuntimeError or fork errno11/EAGAIN). All 32 workload-UID concurrent execs
+were refused; all 32 host-created UID1001 management execs returned exit0 and
+exactly `ADMIN_FORK_OK` after `/bin/true`. Workload attempts to setuid(0/1001) still
+returned EPERM. Host pids.events stayed `max 0`; no panic or OOM was observed.
+After release, all eight new execs returned exit0 / `RECOVERY_EXEC_OK`, the existing
+interactive shells forked again, tmux survived and pressure children were reaped.
 
-At full quota all 32 concurrent exec attempts (four per case) return code 128
-and explicit `try again` output. Host pids.events stays zero in all eight cases.
-The pre-existing interactive bash reports fork rejection for `/bin/true`; it
-can still run a builtin. After releasing pressure, all eight shells fork again,
-all fresh execs return exit 0 and exactly `RECOVERY_EXEC_OK`, tmux remains present,
-and the Node heartbeat has advanced while pressure was still held. Children/
-threads are joined or reaped. No runtime panic, OOM, or timeout occurred.
+Every one of the eight Node Worker counters advances between `workers_before`
+and `workers_full`, read by the already-running probe while pressure is held.
+The original bundle measured the main heartbeat only; it did not directly prove
+individual worker progress. Both streams are retained without conflating them.
 
-Both soft-above-hard and hard-limit increases are rejected. Switching UID to 0
-or 1001 fails with EPERM in every case. These test the deployed non-root/capability
-policy; they are not a proof covering every user-namespace or kernel attack.
+A positive control lowers soft below hard then restores it to hard successfully.
+Soft greater than hard is an invalid setting (Python ValueError, no errno), not
+evidence of capability enforcement. Raising hard is also refused with ValueError;
+do not relabel that as observed EPERM. Only the setuid checks record EPERM. These
+bounded checks do not prove every privilege or namespace boundary. Probe guards
+stop before pressure if a prohibited operation succeeds and fail if the allocation
+bound is reached without a refusal; neither condition may look like at-limit success.
 
-## Literal acceptance gap and decision
+## Noninteractive session risk and management boundary
 
-The existing-shell **fork at full quota** criterion fails in all eight cases.
-It cannot be marked passed based on builtin responsiveness. If the product
-accepts temporary refusal to start any task while the UID is full, these are
-candidate rejection/recovery profiles; if shell commands must keep launching,
-the current single-UID task policy does not provide that guarantee.
+The explicit CPU2/N64/H256/fork case records `shell_exit_while_full=254` and
+`shell_exit=254`. The container, tmux and Node workers remain alive; four management
+execs succeed at full quota and a fresh workload exec recovers after release.
+The **old noninteractive shell does not recover**. This is a real session risk,
+not a failed runtime rejection test. Actual agent launch/supervision behavior must
+be bound to this observation before trial release; Claude lifecycle is untested.
+The earlier eight-case noninteractive pilot is published too, including failed
+Docker-cp heartbeat attempts, not used to claim session survival.
 
-The evidence therefore does not release a trial. Per #70, trigger the microVM
-route review before opening a trial. Changing isolation alone does not create
-space under a full guest task limit, so that review must separately define the
-management-session guarantee. The historical host-cap panic remains an independent
-failure; reserving more host tasks is not its repair. No further open-ended PID
-experiment series is proposed by this report.
+One workload UID plus a separately trusted management UID replaces the old
+single-guest-UID invariant. Access is host-controlled; the guest receives neither
+Docker socket nor a way to invoke privileged management exec. The experiment
+proves this bounded path works, not complete authorization or isolation security.
+Network is default bridge with npm registry egress, **not** a verified network
+isolation policy; #46 remains a separate gate.
 
-## Reproduction and evidence boundary
+The historical host-cap clone panic is unchanged. A microVM comparison, if pursued,
+must target Sentry failure containment when host clone fails, not guest inability
+to fork at full quota. More headroom is not a panic repair. #8 stays open and
+#10/#11 remain waiting; founder acceptance and #67/E05/E10 are not implied.
+
+## Reproduction and provenance
 
 ```sh
-sudo python3 scripts/gvisor-m0-pid.py --image "$IMAGE" --output /private/raw-70
-python3 scripts/gvisor-publish-evidence.py --raw /private/raw-70 --out /private/published-70
+git -c core.autocrlf=true archive 7ef80b33834aee16cb0f2b54c1ff71dec499eb37 | tar -x -C /private/source
+cd /private/source
+sudo python3 scripts/gvisor-m0-pid.py --source-commit 7ef80b33834aee16cb0f2b54c1ff71dec499eb37 --image "$IMAGE" --output /private/raw-interactive
+sudo python3 scripts/gvisor-m0-pid.py --source-commit 7ef80b33834aee16cb0f2b54c1ff71dec499eb37 --image "$IMAGE" --shell-mode noninteractive --cpus 2 --guests 64 --kinds fork --output /private/raw-noninteractive
 ```
 
-Use the immutable image above and a fresh directory. The shared #63 debug-log
-setup is enabled only on the idle dedicated VM, then restored. The runner uses
-at most 272 allocation attempts, four concurrent exec clients, bounded command
-timeouts, 2 GiB/container and sequential cases. It records raw results rather
-than computing an automatic runtime go. `m0-policy.json` supersedes the shared
-harness's old `policy.json` defaults.
+Use fresh private paths and the image above. Explicit core.autocrlf=true reproduces
+the Windows-created archive bytes; tests recreate that archive and check measured
+hashes including the lockfile. Historical six hash mismatches are line-ending
+differences; source-recovery metadata records canonical Git references and CRLF
+positions. Earlier uncommitted pilot sources have measured text snapshots instead.
+All original source hashes are reconstructable; do not treat redacted source text
+alone as the unmodified original.
 
-Published bundle: `evidence/2026-09-27-m0-pid/` (262 redacted text files plus hash
-manifest). Raw files remain outside the repository on the VM. Runtime logs were
-selected by the final run's container IDs. Publisher reported no opaque files
-or registered-secret leaks; a separate credential-pattern scan found no matches.
-No key was supplied. Source hashes cover the runner, probes and npm fixture.
+Published bundles: `evidence/2026-09-27-m0-pid` (282 files), and
+`evidence/2026-09-27-pid-review/{pilot,interactive,noninteractive}` (61/305/48 files),
+each plus a hash manifest. Raw data remains outside repo. Republished with tool
+commit `34cc81f0a4b996921edf250a6c65322dce83cd67` from #72, preserving #73 nested
+exemptions and Go SysProcAttr Credential values. The two historical bundles each
+retain three source-comment/code-literal redactions; rerun bundles have zero.
+No opaque files or registered-secret leaks were reported; no key was supplied.
 
-A preliminary eight-case run used non-interactive bash and attempted heartbeat
-reads via Docker cp. Non-interactive bash exited after failed fork, and cp was
-not reliable at full quota. Those observations were not used as final session
-evidence. The final run uses interactive bash and has the already-running probe
-read the heartbeat before releasing any resources. The preliminary raw logs are
-retained privately. No runtime configuration was changed between those runs.
-
-All eight final containers were removed after checking ownership labels. The
-original systrap-only daemon configuration was restored. `host-after.json`
-records an empty container list and post-run versions. Existing #61–#63 bundles
-were not altered.
+Owned test containers were label-checked and removed; host-after captures no test
+containers and restored systrap-only daemon configuration. No company folders or
+Docker socket were mounted. Versions were recaptured after runs. Existing #61–#63
+evidence is unchanged. These are bounded sequential VM experiments, not release CI.

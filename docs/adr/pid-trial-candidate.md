@@ -4,36 +4,47 @@ Status: **Proposed**, 2026-09-27. No founder approval or runtime go implied.
 
 ## Decision proposed
 
-Retain non-root UID 1000, cap-drop ALL, no-new-privileges, one guest UID and equal
-soft/hard NPROC as candidate invariants. For the tested 2/4 CPU profiles, start
-with host task backstop `H = 2 × N × (C + 1) + 64`, where N is guest NPROC and C
-is sandbox CPU quota. This is a conservative tested envelope, not an empirical
-law or a production capacity promise. Include the runtime's effective CPU/thread
-settings in any future deployment review; fractional CPU/minimum GOMAXPROCS must
-not be silently substituted into the formula.
+**GO-candidate for clean rejection at full guest quota and recovery after release.**
+The previous NO-GO based on an existing shell failing to fork at full NPROC is
+withdrawn: #70 now treats that observation as measurement, not a pass condition.
+The measured workload UID must temporarily reject new tasks while its quota is
+full. Whether that product behavior is acceptable remains a founder decision.
 
-Candidate profiles: N=64 or 128, C=2 or 4, memory=2 GiB, one simultaneous sandbox
-on the existing 4-vCPU/8-GiB VM. Admission must also reserve memory and host tasks
-for the VM/control plane; eight sequential test cases do not prove multi-sandbox
-capacity. Real Claude task capacity remains unmeasured without E05/E10.
+Keep one **workload UID** (1000), cap-drop ALL, no-new-privileges and equal initial
+soft/hard NPROC. Permit a distinct trusted management UID (1001), created only
+through the host control plane. In eight cases, all 32 management execs forked
+`/bin/true` while all 32 workload-UID execs were cleanly refused. Guest attempts
+to switch to UID 1001 or root failed with EPERM. This is a candidate management
+path, not complete user-namespace/escalation isolation validation. The guest must
+never receive Docker socket access or credentials to invoke that host operation.
 
-**NO-GO for trial release against the current complete #70 acceptance text.**
-At a fully consumed per-UID task quota, an existing shell cannot fork a new
-external command. Increasing host headroom cannot make that guest fork succeed.
-An interactive shell can stay connected and recover after pressure is released;
-this is a different guarantee. The issue explicitly asks to verify a forking
-command before release, so this requirement must not be marked passed by substituting
-a builtin. The measured rejection/recovery behavior can support a candidate only
-if the product explicitly accepts temporary inability to start commands at full
-quota. That policy decision is still open.
+Use `H = 2*N + 128` as the **tested candidate**, with N=64/128, CPU quota=2/4,
+memory=2 GiB and one sandbox at a time on the existing 4-vCPU/8-GiB VM. H is 256/384.
+This replaces `2*N*(C+1)+64`: the old CPU multiplier was not empirically supported.
+The new eight cases stayed below H (largest full-phase sample 274); none tested
+the new host boundary. Neither formula repairs the historical host-clone panic.
+Host admission still needs measured multi-sandbox and control-plane reservations;
+the old caps were roughly 3.2–5 times fork peaks, an admission-density tradeoff,
+not evidence of that much necessary overhead or a measured density ratio.
 
-Per #70/#8's reversal condition, re-evaluate microVM isolation before opening a
-trial rather than extending gVisor experiments indefinitely. This is a review
-trigger, not a decision to implement a different runtime or a claim that microVMs
-make a full guest PID quota disappear. Compare failure containment and management
-access separately. The previously demonstrated runsc host-clone panic is still
-unfixed; the present high-host-cap runs do not supersede that evidence.
+## Session and containment gates
 
-#8 stays open. #10/#11 are not authorized to start. #67 and paid E05/E10 retain
-their separate gates. The evidence report for this proposal is
-`docs/research/gvisor-m0-pid-results-20260927.md`.
+Noninteractive bash **exits 254** after fork failure in the explicit rerun, while
+Node/tmux and the container survive and fresh exec recovers after pressure release.
+Original noninteractive pilot evidence is now published. An interactive shell
+stays alive, but changing shell mode cannot establish the actual agent lifecycle
+contract. Determine the product launch/session path and verify its exit handling
+before trial release; no Claude process/session survival claim is made here.
+
+MicroVM comparison is triggered by the independently observed **host clone
+rejection crashing Sentry and its failure-containment scope**, not guest EAGAIN.
+Guest workload can induce host tasks charged to the runtime cgroup; the measured
+thread and fork mappings differ. Do not assume one guest task equals one host
+task. Extra headroom avoids the measured boundary in these cases but does not
+fix panic when that boundary is reached. A runtime comparison must test this
+containment property; changing runtime does not remove guest quota exhaustion.
+
+These runs use default Docker bridge networking and npm registry egress. Network
+isolation/private-address/metadata protections under #46 are **not validated**.
+#8 stays open; #10/#11 wait for their gates, including #67 policy and paid E05/E10.
+See [measured evidence](../research/gvisor-m0-pid-results-20260927.md).
