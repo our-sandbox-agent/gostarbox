@@ -48,6 +48,21 @@ class RedactTests(unittest.TestCase):
                   'credentials_injected': False, 'model_budget': 'none configured'}
         self.assertEqual(Redactor().scrub(record), record)
 
+    def test_exempt_field_keeps_its_exemption_when_nested_or_prefixed(self):
+        # report.json nests these under "environment", and the flat form already worked.
+        for text in ['environment.credential_delivery_ref: private-handover-note-2026-09',
+                     'credential_delivery_ref: private-handover-note-2026-09',
+                     'workspace.authorization_ref: user-authorized-local-vm-2026-09-26']:
+            with self.subTest(text=text.split(':')[0]):
+                self.assertEqual(Redactor().scrub(text), text)
+        nested = {'environment': {'credential_delivery_ref': 'private-handover-note-2026-09'}}
+        self.assertEqual(Redactor().scrub(nested), nested)
+
+    def test_go_struct_field_named_credential_is_not_a_secret(self):
+        # runsc logs SysProcAttr; masking it hides exactly what a reviewer checks.
+        text = 'sandbox.go:1433] SysProcAttr: &{Chroot: Credential:<nil> Ptrace:false Setsid:true}'
+        self.assertEqual(Redactor().scrub(text), text)
+
     def test_short_and_literal_values_are_not_masked(self):
         for text in ['credentials_injected: false', 'secret: none', 'password=1']:
             with self.subTest(text=text):
