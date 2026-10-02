@@ -20,6 +20,7 @@
 | [gvisor-guest-pid-results-20260927.md](gvisor-guest-pid-results-20260927.md) | guest NPROC 部分緩解；E09 仍阻塞 |
 | [gvisor-m0-pid-results-20260927.md](gvisor-m0-pid-results-20260927.md) | #70 修正判定與證據（#71 候選來源） |
 | [gvisor-m0-memory-results-20260927.md](gvisor-m0-memory-results-20260927.md) | #67 記憶體壓力與恢復證據（#72 來源） |
+| [m0-matrix-index.md](m0-matrix-index.md) | #8 矩列→來源／版本／hash／清理／成本索引（僅簿記既有證據，not_run 與 FAIL 保留） |
 | [evidence/](evidence/) | 遮蔽後的原始證據包（歷史紀錄，保留原狀） |
 
 E05／E10 的付費實測由 #75 追蹤；#75 完成只補執行證據，不自動完成 #8 的人工 GO。
