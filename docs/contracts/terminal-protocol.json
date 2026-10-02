@@ -20,7 +20,8 @@
     "binding": "JSON text frames over a single WebSocket connection per terminal attachment",
     "entry": "the unified console.<domain> entry per ADR sandbox-lifecycle.md section 3; the CLI never calls the Runner directly",
     "transport_agnostic": true,
-    "backend": "ttyd or an owned PTY bridge is the OPEN decision in open_decisions; the frames are identical either way"
+    "backend": "ttyd or an owned PTY bridge is the OPEN decision in open_decisions; the frames are identical either way",
+    "bounds": "max frame size and max input/output data byte size, like the server buffer size, are set at runtime integration under #13; rate_limited deferral follows the same runtime bounds"
   },
   "common_fields": {
     "seq": "integer, per-direction monotonic counter on the connection; gaps on the server side are allowed after output drops",
@@ -240,7 +241,7 @@
     }
   },
   "lifecycle_binding": {
-    "binding": "a connection is bound to sandbox_id + generation at hello time; every frame after hello_ack is fenced by that identity",
+    "binding": "a connection is bound to sandbox_id + generation at hello time; hello is the first client frame, and any other frame arriving before hello_ack is answered with bye code invalid_frame; every frame after hello_ack is fenced by that identity",
     "on_stop_or_destroy": {
       "rule": "when the sandbox moves to Suspending or Destroying the server sends bye and only then closes the WebSocket; bye is always the final server frame",
       "reasons": ["sandbox_stopping", "sandbox_destroyed"]
