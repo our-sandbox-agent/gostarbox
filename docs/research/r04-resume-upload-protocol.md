@@ -12,7 +12,7 @@ Refs #34（里程碑 R，#6；前置 #20、#23）。狀態：**規劃中／未�
 |---|---|
 | 拆 server tus/import 與 Web/CLI resume 子票；授權涵蓋 tus POST/HEAD/PATCH/DELETE，每次綁 workspace/upload id | 執行前清單、相容性檢查表 A1–A3 |
 | 500 MB 斷網、重整、CLI Ctrl-C 後重傳可續接；hash 一致才完成 | 相容性檢查表 U1–U4、量測矩陣 |
-| 先預留暫存＋最終檔案空間；tar 展開有總大小／數量上限，並发不超額 | 相容性檢查表 S1–S3 |
+| 先預留暫存＋最終檔案空間；tar 展開有總大小／數量上限，並發不超額 | 相容性檢查表 S1–S3 |
 | post-finish 重送、匯入中斷和 TTL 清理可重跑；100% 傳完不等於匯入完成 | 相容性檢查表 P1–P4 |
 | 代理實際是 Caddy，參數按 Caddy 配置，不直接抄 nginx 的 proxy_request_buffering | 相容性檢查表 C1、執行前清單版本釘選 |
 
@@ -37,7 +37,7 @@ Refs #34（里程碑 R，#6；前置 #20、#23）。狀態：**規劃中／未�
 - 工作負載：固定 fixture 產生器建立 **500 MB** 單檔，與代表性地料夾 tar（小檔多量／大檔少量變體）；fixture 與 sha256 執行時固定並記錄。
 - **端到端耗時（秒）**：上傳建立（POST）→ 伺服器確認 hash 一致的完成點，`date +%s.%N` 差值；含中斷情境者另記**淨傳時間**（扣除中斷等待）。
 - **續接耗時（秒）**：重傳指令送出 → 自 HEAD 回報的 Upload-Offset 起繼續送出 bytes。
-- **重傳 bytes**：中斷後重送的 payload 字節數（重送總量 − 續接 offset），探針為 client 計量與 server 端 `stat`；理想值 0（不从头重傳）。
+- **重傳 bytes**：中斷後重送的 payload 字節數（重送總量 − 續接 offset），探針為 client 計量與 server 端 `stat`；理想值 0（不從頭重傳）。
 - **暫存空間（MiB）**：`du -sh` 暫存與最終檔案位置，並記錄主機可用磁碟。
 - HTTP 探針：`curl -sS -o /dev/null -w '%{http_code}'`（POST／HEAD／PATCH／DELETE 各步的狀態碼入證據）。
 
@@ -73,13 +73,13 @@ curl -X DELETE <server>/<files>/<upload-id>                                   # 
 | A1 tus 方法授權 | 以拋棄式 token 對 POST／HEAD／PATCH／DELETE（含未列方法）逐一探測 | 每個方法都驗 workspace 綁定與 token 範圍；跨 workspace／未知 upload id 一律 404（[tenant-authz](../contracts/tenant-authz.md) 語意），無 401／403 差異洩漏探測訊號；未授權 PATCH 寫不進任何 byte | |
 | A2 upload id 跨租戶 | workspace A 建立上傳後，以 workspace B 的有效 token 存取同一 upload id（HEAD 與 PATCH） | 一律 404／拒絕；offset、metadata 與錯誤訊息不洩漏 B 不該知道的存在性 | |
 | A3 Suspend 唯讀 | 於 cold Suspend 狀態嘗試 POST／PATCH 續傳，並嘗試讀取／下載（[files-policy](../contracts/files-policy.md) `assert_mutable` 語意） | 寫入類被拒（`suspend_read_only`），讀取與下載仍可用；寫入未被拒即 fail | |
-| U1 斷網續接 | 500 MB 傳至中斷點切斷網路，恢復後重傳 | HEAD 回報 offset 等於伺服器實收 bytes；只補剩餘、不从头；完成前後 sha256 一致才算成功 | |
+| U1 斷網續接 | 500 MB 傳至中斷點切斷網路，恢復後重傳 | HEAD 回報 offset 等於伺服器實收 bytes；只補剩餘、不從頭；完成前後 sha256 一致才算成功 | |
 | U2 瀏覽器重整 | 傳至中斷點重新整理頁面，再進入同 workspace 上傳 | 同 U1；重整不產生孤兒暫存（或依明確 TTL 語意記錄去處） | |
 | U3 CLI Ctrl-C 續接 | 傳至中斷點送 SIGINT，重跑相同 CLI 指令 | 同 U1；Ctrl-C 不留半寫檔被當成功，暫存可被後續重跑接管或依 TTL 清理 | |
 | U4 hash 一致才完成 | 正常完成與故意送損毀 bytes 兩式對照 | hash 一致才標完成；不一致明確 fail 且不覆寫既有成品（`verify_upload` 語意） | |
 | S1 空間預留 | 傳輸前驗暫存＋最終檔案**雙份**空間預留；先填滿磁碟再觸發上傳 | 開始前即拒絕（空間不足），不產生部分寫入；預留走 `UploadQuotaGate` 原子語意，失敗／到期即釋放；exit code 與輸出入證據 | |
 | S2 tar 展開上限 | 構造超過總大小與條數上限的 tar（對照契約修訂後上限；未修訂前為 512 MiB／10,000） | 超限即 abort、不留部分檔；計數只在 accept 前進（`TarPolicy` 語意） | |
-| S3 並发不超額 | 多個上傳同時預留至 volume 上限 | 聯合預留 ≤ volume cap（`UploadQuotaGate` 語意）；超額者明確拒絕，不默默放行 | |
+| S3 並發不超額 | 多個上傳同時預留至 volume 上限 | 聯合預留 ≤ volume cap（`UploadQuotaGate` 語意）；超額者明確拒絕，不默默放行 | |
 | P1 post-finish 重送 | 上傳完成事件重送 N 次 | 冪等：不重複匯入、不重複計量；重送本身可重跑 | |
 | P2 匯入中斷重跑 | 匯入（tar 展開）中途 kill，再觸發同一次匯入 | 可重跑至完成；無半套狀態被當成功；重跑證據入 manifest | |
 | P3 TTL 清理 | 對暫存設短 TTL 到期，再對同 upload id 操作；重跑清理 | 清理冪等可重跑；清理後重傳行為明確（從頭或明確拒絕）並如實記錄 | |
