@@ -1,7 +1,9 @@
 # Memory termination and recovery policy (#67)
 
 Status: **Proposed**, 2026-09-27; founder decision required before trial release.
-This specifies future #11/#19 behavior. It does not implement or unblock them.
+This specifies future behavior, split by responsibility: runtime instance recreation
+under #11, operation/generation/reconcile under #17, automatic recovery strategy under #19.
+It does not implement or unblock them.
 
 ## Decision supported by measurements
 
@@ -106,7 +108,10 @@ The proposed implementation contract **recreates an execution instance with the
 same approved volumes**. Writable rootfs data outside those volumes is not
 preserved. The experiment tested only `docker start` on the same container, which
 also retains its writable layer; it did not validate recreation, fencing, operation
-idempotency or the product API. These remain future #11/#19 tests. Unflushed
+idempotency or the product API. These remain future tests, split by responsibility:
+runtime instance recreation and bounded health checks are #11; operation
+submission, generation/fencing and reconciliation acceptance are #17; any
+automatic recovery strategy remains a #19 product decision. Unflushed
 application-buffer loss is a design assumption consistent with the preservation
 contract, not measured by the two fsynced marker files.
 
@@ -114,6 +119,7 @@ contract, not measured by the two fsynced marker files.
 
 Founder must accept the loss of in-flight processes and the four recovery behaviors,
 or keep trial release on hold/reconsider isolation. Implementation and end-to-end
-acceptance of these behaviors are still required under #11/#19/G01/G05. #8 remains
+acceptance of these behaviors are still required under #11 (runtime), #17
+(operation/generation/reconcile), #19 (auto strategy) and G01/G05. #8 remains
 open; #10/#11 remain blocked by the M0 release decision. This research package does
 not send any notification to invitees or start feature work.

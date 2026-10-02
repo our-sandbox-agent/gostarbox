@@ -33,7 +33,7 @@ Active↔Idle 也使用 operation；切換確認前維持原 observed_state 並�
 
 Error 必須保留 `last_confirmed_state`、錯誤代碼與資源清單；容量只在確認釋放後歸還。Lost 保留資源預留，獨立於 Runner 的 host watchdog 依 lease fence 舊 generation；沒有停止證據不可宣稱釋放容量或停止計量。
 
-記憶體終止補充（#67 提案，未實作）：確認終止映射為 Error，`error.code=memory_limit_terminated`；重試耗盡仍是 Error，代碼 `recovery_retry_exhausted`，不新增 recovery-blocked 狀態。對帳確認舊實體停止、憑證／容量／volume 檢查通過後，使用既有 state endpoint 要求 Active，經 operation 進 Resuming，建立新 generation；健康確認後才進 Active，失敗回 Error、未知回 Lost。詳見 [記憶體恢復契約](memory-session-recovery.md)。
+記憶體終止補充（#67 提案，未實作）：確認終止映射為 Error，`error.code=memory_limit_terminated`；重試耗盡仍是 Error，代碼 `recovery_retry_exhausted`，不新增 recovery-blocked 狀態。對帳確認舊實體停止、憑證／容量／volume 檢查通過後，使用既有 state endpoint 要求 Active，經 operation 進 Resuming，建立新 generation；健康確認後才進 Active，失敗回 Error、未知回 Lost。恢復責任對應：執行實體重建與健康檢查由 #11 Runner 驗收、operation／generation／fencing 與對帳由 #17 驗收、自動恢復策略屬 #19 的產品決策（預設仍為使用者明確重啟）。詳見 [記憶體恢復契約](memory-session-recovery.md)。
 
 ## 3. 統一 API
 
@@ -83,13 +83,13 @@ cold Suspend 保留檔案不代表 key 也保存，Web 恢復尚無安全重送�
 
 ### 記憶體終止後重新建立執行實體（#67 提案）
 
-此路徑套用同一保存矩陣：保留 approved workspace/home volumes、session ID/cwd 及 metadata；不保留 RAM、程序、tmux/socket、rootfs 可寫層或 ephemeral credential。CLI 重新提供 key，不能靠 volume 偷存 key。已落盤不等於所有應用程式緩衝／部分寫入都安全；無法依賴 OOM 當下的 save hook。當前實測只涵蓋同一容器 docker start 與兩個 fsynced marker，重新建立實體仍需 #11/#19 驗收。
+此路徑套用同一保存矩陣：保留 approved workspace/home volumes、session ID/cwd 及 metadata；不保留 RAM、程序、tmux/socket、rootfs 可寫層或 ephemeral credential。CLI 重新提供 key，不能靠 volume 偷存 key。已落盤不等於所有應用程式緩衝／部分寫入都安全；無法依賴 OOM 當下的 save hook。當前實測只涵蓋同一容器 docker start 與兩個 fsynced marker，重新建立實體仍需 #11（runtime）／#17（operation／對帳）／#19（自動策略）驗收。
 
 ## 6. 首版邊界及驗收
 
 只 Claude、API key、invite allowlist。公開 repo clone；使用者主動 push；安全的只下載 cp 必須提供權限不足時的成果取回路徑。檔案路徑驗證、symlink 及解壓逃逸防護仍屬必要驗收，不因稱作「基本下載」而省略。
 
-Snapshot／Fork、warm restore、大檔續傳、自動 push、Codex／Harness、正式收費均不阻擋首版。#39／#41 暫緩到 #15 接真 API 後再評估；既有 demo 不會因文件修改突然變成真服務。
+Snapshot／Fork、warm restore、大檔續傳、自動 push、Codex／Harness、正式收費均不阻擋首版。#39／#41 已收束：實作（#42／#64）與 Pages 發布修復（#74，PR #81）已交付；後續瀏覽器檔案能力由 #20 真 API 與 #15 Web 整合承接，既有 demo 不會因文件修改突然變成真服務。
 
 契約案例：斷線後 PID／任務仍在；cold stop/start 後檔案一致但 PID 不同；缺 key 不啟動 Claude；同 key 重試不重建；相反操作回 409；Lost 不雙開；old-generation hook 不停新任務；沒有 hook 的長任務不因無鍵盤停機；destroy 刪除範圍可核對。
 
