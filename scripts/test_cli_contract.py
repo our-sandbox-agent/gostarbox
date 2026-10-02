@@ -58,6 +58,20 @@ class RejectsBrokenContracts(unittest.TestCase):
         self.assertTrue(any("direct_runner" in m and "forbidden" in m
                             for m in mutated(edit)))
 
+    def test_direct_runner_flag_hyphen_spelling_rejected(self):
+        def edit(doc):
+            doc["global_flags"].append(
+                {"flag": "--direct-runner", "effect": "talk to the Runner directly"})
+        self.assertTrue(any("direct-runner" in m and "forbidden" in m
+                            for m in mutated(edit)))
+
+    def test_runner_direct_flag_rejected(self):
+        def edit(doc):
+            find_command(doc, "exec")["flags"].append(
+                {"flag": "--runner-direct", "effect": "talk to the Runner directly"})
+        self.assertTrue(any("runner-direct" in m and "forbidden" in m
+                            for m in mutated(edit)))
+
     def test_command_bypassing_control_plane_rejected(self):
         def edit(doc):
             find_command(doc, "exec")["control_plane_only"] = False
@@ -157,7 +171,7 @@ class RejectsBrokenContracts(unittest.TestCase):
     def test_network_drop_without_reconnect_rejected(self):
         def edit(doc):
             doc["terminal"]["network_drop"] = "exit 76 immediately on any network drop"
-        self.assertTrue(any("auto-reconnect" in m or "network_drop" in m for m in mutated(edit)))
+        self.assertTrue(any("auto-reconnect" in m or "reconnect" in m for m in mutated(edit)))
 
     def test_cold_recovery_as_old_session_rejected(self):
         def edit(doc):

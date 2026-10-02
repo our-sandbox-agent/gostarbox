@@ -73,8 +73,10 @@ def check_contract(doc):
     if "control plane" not in rule or "never" not in rule.lower() or "Runner" not in rule:
         bad("control_plane.rule must state every command goes through the control plane, never a Runner")
     for flag in iter_flag_names(doc):
-        if isinstance(flag, str) and "direct_runner" in flag:
-            bad(f"flag {flag!r} bypasses the control plane; direct_runner flags are forbidden")
+        if isinstance(flag, str):
+            norm = flag.lower().replace("-", "_")
+            if "direct" in norm and "runner" in norm:
+                bad(f"flag {flag!r} bypasses the control plane; direct_runner flags are forbidden")
 
     # Commands: closed set, unique, usage + documented exit codes + control-plane routing.
     commands = doc["commands"]
