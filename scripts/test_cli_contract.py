@@ -67,7 +67,7 @@ class RejectsBrokenContracts(unittest.TestCase):
 
     def test_runner_direct_flag_rejected(self):
         def edit(doc):
-            find_command(doc, "exec")["flags"].append(
+            doc["global_flags"].append(
                 {"flag": "--runner-direct", "effect": "talk to the Runner directly"})
         self.assertTrue(any("runner-direct" in m and "forbidden" in m
                             for m in mutated(edit)))
