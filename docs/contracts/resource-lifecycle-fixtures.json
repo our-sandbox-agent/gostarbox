@@ -1,0 +1,110 @@
+[
+  {
+    "name": "two-snapshots-delete-one",
+    "notes": "Two coexisting snapshots with different sizes and TTLs; deleting ONE ends only its own accrual, the other keeps accruing until its own confirmed delete. s1: 2048 B * 3000 ms = 6,144,000; s2: 4096 B * 7000 ms = 28,672,000 byte*ms.",
+    "events": [
+      {"type": "snapshot.created", "resource_type": "snapshot", "resource_id": "s1", "effective_at_ms": 0, "quantity": {"snapshot_stored": 2048}},
+      {"type": "snapshot.created", "resource_type": "snapshot", "resource_id": "s2", "effective_at_ms": 0, "quantity": {"snapshot_stored": 4096}},
+      {"type": "snapshot.expired", "resource_type": "snapshot", "resource_id": "s1", "effective_at_ms": 2000, "payload": {"retention_deadline_ms": 2000}},
+      {"type": "snapshot.deleted", "resource_type": "snapshot", "resource_id": "s1", "effective_at_ms": 3000},
+      {"type": "snapshot.deleted", "resource_type": "snapshot", "resource_id": "s2", "effective_at_ms": 7000}
+    ],
+    "expected": {
+      "snapshot/s1": {"confirmed_quantity_ms": {"snapshot_stored": 6144000}},
+      "snapshot/s2": {"confirmed_quantity_ms": {"snapshot_stored": 28672000}}
+    }
+  },
+  {
+    "name": "empty-volume-zero-usage",
+    "notes": "A provisioned volume of 0 bytes exists as a resource for 5000 ms but accrues exactly zero usage: 0 B * 5000 ms = 0. The totals row EXISTS (resource exists) with zero — it is not omitted and not fabricated.",
+    "events": [
+      {"type": "resource.provisioned", "resource_type": "workspace_volume", "resource_id": "v-empty", "effective_at_ms": 0, "quantity": {"volume_provisioned": 0}},
+      {"type": "volume.purged", "resource_type": "workspace_volume", "resource_id": "v-empty", "effective_at_ms": 5000}
+    ],
+    "expected": {
+      "workspace_volume/v-empty": {"confirmed_quantity_ms": {"volume_provisioned": 0}}
+    }
+  },
+  {
+    "name": "three-resume-cycles-no-double-count",
+    "notes": "Three suspend/resume cycles: each resume is a NEW runtime resource (new generation, new resource id), so per-generation accrual is 1000 milliCPU * 1000 ms = 1,000,000 each (r1, r2, r3) with no overlap and no double counting across generations. The workspace volume v1 accrues continuously through all suspends: 1024 B * 5000 ms = 5,120,000. The harness also replays the whole batch a second time and asserts duplicate receipts with identical totals.",
+    "events": [
+      {"type": "runtime.started", "resource_type": "runtime", "resource_id": "r1", "effective_at_ms": 0, "quantity": {"cpu_reserved": 1000}},
+      {"type": "resource.provisioned", "resource_type": "workspace_volume", "resource_id": "v1", "effective_at_ms": 0, "quantity": {"volume_provisioned": 1024}},
+      {"type": "runtime.stopped", "resource_type": "runtime", "resource_id": "r1", "effective_at_ms": 1000},
+      {"type": "runtime.started", "resource_type": "runtime", "resource_id": "r2", "effective_at_ms": 2000, "generation": 2, "quantity": {"cpu_reserved": 1000}},
+      {"type": "runtime.stopped", "resource_type": "runtime", "resource_id": "r2", "effective_at_ms": 3000},
+      {"type": "runtime.started", "resource_type": "runtime", "resource_id": "r3", "effective_at_ms": 4000, "generation": 3, "quantity": {"cpu_reserved": 1000}},
+      {"type": "runtime.stopped", "resource_type": "runtime", "resource_id": "r3", "effective_at_ms": 5000},
+      {"type": "resource.released", "resource_type": "workspace_volume", "resource_id": "v1", "effective_at_ms": 5000}
+    ],
+    "expected": {
+      "runtime/r1": {"confirmed_quantity_ms": {"cpu_reserved": 1000000}},
+      "runtime/r2": {"confirmed_quantity_ms": {"cpu_reserved": 1000000}},
+      "runtime/r3": {"confirmed_quantity_ms": {"cpu_reserved": 1000000}},
+      "workspace_volume/v1": {"confirmed_quantity_ms": {"volume_provisioned": 5120000}}
+    }
+  },
+  {
+    "name": "volume-trashed-while-sandbox-active",
+    "notes": "The volume is trashed at t3000 (retention window START, audit-only) and purged at t6000 while the sandbox runtime stays Active until t8000. Volume accrual runs 0..6000 (purge ends it, NOT the trash marker and NOT the runtime stop): 1024 B * 6000 ms = 6,144,000. Sandbox compute accrual continues past the purge to its own confirmed stop: 1000 milliCPU * 8000 ms = 8,000,000. Trash->purge is fully independent of sandbox resume/destroy.",
+    "events": [
+      {"type": "runtime.started", "resource_type": "runtime", "resource_id": "r1", "effective_at_ms": 0, "quantity": {"cpu_reserved": 1000}},
+      {"type": "resource.provisioned", "resource_type": "workspace_volume", "resource_id": "v1", "effective_at_ms": 0, "quantity": {"volume_provisioned": 1024}},
+      {"type": "volume.trashed", "resource_type": "workspace_volume", "resource_id": "v1", "effective_at_ms": 3000, "payload": {"retention_deadline_ms": 6000}},
+      {"type": "volume.purged", "resource_type": "workspace_volume", "resource_id": "v1", "effective_at_ms": 6000},
+      {"type": "runtime.stopped", "resource_type": "runtime", "resource_id": "r1", "effective_at_ms": 8000}
+    ],
+    "expected": {
+      "runtime/r1": {"confirmed_quantity_ms": {"cpu_reserved": 8000000}},
+      "workspace_volume/v1": {"confirmed_quantity_ms": {"volume_provisioned": 6144000}}
+    }
+  },
+  {
+    "name": "snapshot-ttl-expired-delete-unconfirmed",
+    "notes": "Snapshot TTL expires at t2000, which emits a delete REQUEST (snapshot.expired, audit-only); deletion is only confirmed at t6500. Accrual continues through the whole unconfirmed window: 2048 B * 6500 ms = 13,312,000 byte*ms — never 2048 * 2000. Both the retention deadline and the actual release time are recorded.",
+    "events": [
+      {"type": "snapshot.created", "resource_type": "snapshot", "resource_id": "s1", "effective_at_ms": 0, "quantity": {"snapshot_stored": 2048}},
+      {"type": "snapshot.expired", "resource_type": "snapshot", "resource_id": "s1", "effective_at_ms": 2000, "payload": {"retention_deadline_ms": 2000}},
+      {"type": "snapshot.deleted", "resource_type": "snapshot", "resource_id": "s1", "effective_at_ms": 6500}
+    ],
+    "expected": {
+      "snapshot/s1": {"confirmed_quantity_ms": {"snapshot_stored": 13312000}}
+    }
+  },
+  {
+    "name": "lost-correction-in-sealed-month",
+    "notes": "Lost runtime: trusted heartbeat H=t1000, lease expired R=t3000 -> confirmed only 1000 milliCPU * 1000 ms = 1,000,000, plus an uncertain [1000,3000) gap of 2000 ms. The recovery produces a trusted late stop effective t2000, which lands INSIDE the sealed 2026-09 period [0,4000): apply_correction flags it for manual handling (flagged_manual) instead of auto-applying. Sealed-period totals are unchanged: still 1,000,000 (auto-applying would rewrite them to 2,000,000). The flagged correction is not stored in the event history.",
+    "events": [
+      {"type": "runtime.started", "resource_type": "runtime", "resource_id": "r1", "effective_at_ms": 0, "quantity": {"cpu_reserved": 1000}},
+      {"type": "heartbeat.confirmed", "resource_type": "runtime", "resource_id": "r1", "effective_at_ms": 1000},
+      {"type": "lease.expired", "resource_type": "runtime", "resource_id": "r1", "effective_at_ms": 3000, "payload": {"last_observed_at_ms": 1000}}
+    ],
+    "corrections": [
+      {"type": "runtime.stopped", "resource_type": "runtime", "resource_id": "r1", "effective_at_ms": 2000, "recorded_at_ms": 5000}
+    ],
+    "sealed_periods": [
+      {"period": "2026-09", "start_ms": 0, "end_ms": 4000}
+    ],
+    "expected_correction_receipts": [
+      {"status": "flagged_manual", "period": "2026-09"}
+    ],
+    "windows": {
+      "2026-09": [0, 4000]
+    },
+    "expected_window_totals": {
+      "2026-09": {
+        "runtime/r1": {"confirmed_quantity_ms": {"cpu_reserved": 1000000}}
+      }
+    },
+    "expected": {
+      "runtime/r1": {
+        "confirmed_quantity_ms": {"cpu_reserved": 1000000},
+        "uncertain_ms": 2000,
+        "uncertain_capacity_ranges": [
+          {"start_ms": 1000, "end_ms": 3000, "quantity": {"cpu_reserved": 1000}}
+        ]
+      }
+    }
+  }
+]

@@ -11,6 +11,14 @@ with both versions kept, and state+outbox commits under one sequence id.
 No rates, no currency: summarize() reports quantity*ms and uncertain ranges
 only (no approved rate cards exist yet; #25 owns billing).
 
+#25 lifecycle additions (same schema, no fork): volume.trashed/volume.purged
+(trash starts a retention window but accrual continues until purge; purge is
+independent of sandbox resume/destroy), snapshot_inventory() placeholder
+(empty until real snapshot ops exist), summarize(window=...) period-scoped
+totals, and apply_correction(events, sealed_periods) — the Lost no-restatement
+rule that corrections intersecting a sealed billing period are flagged for
+manual handling, never auto-applied.
+
 Real Runner integration is blocked on #11; the control plane (#76) persists
 these events in the same DB transaction as state confirmations. This library
 is the executable semantics of that contract, not a runtime.
@@ -28,6 +36,7 @@ EVENT_TYPES = frozenset({
     "runtime.started", "runtime.stopped",
     "policy.applied",
     "resource.provisioned", "resource.resized", "resource.released",
+    "volume.trashed", "volume.purged",
     "heartbeat.confirmed", "lease.expired",
     "snapshot.created", "snapshot.expired", "snapshot.deleted",
     "correction.accepted",
@@ -36,9 +45,12 @@ EVENT_TYPES = frozenset({
 # projection semantics per usage-ledger #2:
 _SWITCH = frozenset({"runtime.started", "policy.applied", "resource.provisioned",
                      "resource.resized", "snapshot.created"})  # close old, open new
-_CLOSE = frozenset({"runtime.stopped", "resource.released", "snapshot.deleted"})
+_CLOSE = frozenset({"runtime.stopped", "resource.released", "snapshot.deleted",
+                    "volume.purged"})
 # audit-only (no usage intervals): operation.*, heartbeat.confirmed,
 # snapshot.expired (TTL expiry is a delete REQUEST, not a release),
+# volume.trashed (trash/retention window START — the volume still exists and
+# keeps accruing until its own volume.purged),
 # correction.accepted (replacement events drive the recompute).
 
 REQUIRED_FIELDS = ("schema_version", "event_id", "tenant_id", "workspace_id",
@@ -248,13 +260,18 @@ class EventLedger:
         return {rkey: list(segs) for rkey, segs in self._archive.items()}
 
     # ------------------------------------------------------------ totals
-    def summarize(self):
+    def summarize(self, window=None):
         """Per-resource confirmed totals in integer quantity*ms only.
 
         No rates, no currency, no float: without approved rate cards there is
         no dollar figure to show (issue #77). Uncertain gaps are reported as
         millisecond ranges plus retained capacity, never integrated into
         confirmed totals.
+
+        window: optional (start_ms, end_ms) half-open period filter —
+        confirmed segments are clipped to the window (period-scoped totals for
+        sealed-period / no-restatement checks). Uncertain ranges and
+        open_capacity are reported unclipped.
         """
         totals = {}
         for rkey, projection in self.projection().items():
@@ -264,9 +281,14 @@ class EventLedger:
             for seg in projection["segments"]:
                 if seg["certainty"] != "confirmed":
                     continue
+                start, end = seg["start_ms"], seg["end_ms"]
+                if window is not None:
+                    start, end = max(start, window[0]), min(end, window[1])
+                    if start >= end:
+                        continue
                 for meter, quantity in seg["quantity"].items():
                     confirmed[meter] = confirmed.get(meter, 0) + \
-                        quantity * (seg["end_ms"] - seg["start_ms"])
+                        quantity * (end - start)
             uncertain = [seg for seg in projection["segments"]
                          if seg["certainty"] == "uncertain"]
             resource_type, resource_id = rkey.split("/", 1)
@@ -281,6 +303,58 @@ class EventLedger:
                 "open_capacity": projection["open"],
             }
         return totals
+
+    # ------------------------------------------------- snapshot placeholder
+    def snapshot_inventory(self):
+        """Snapshot placeholder contract (#25): no real snapshot operations
+        are supported in this slice, so the live inventory is EMPTY — never
+        fabricated usage. Snapshot metering still flows through the normal
+        event ledger (snapshot.created/expired/deleted); this reports the
+        runtime inventory, which does not exist yet. When the real snapshot
+        system lands, the control plane plugs it in HERE: derive the live set
+        and confirmed sizes from snapshot.created/deleted events plus the
+        storage service's own inventory — until then {} is the contract
+        (預留 contract，不虛構已用量).
+        """
+        return {}
+
+    # -------------------------------------------------------- corrections
+    def _sealed_period_hit(self, event, sealed_periods):
+        """Return the sealed period whose half-open [start_ms, end_ms) window
+        contains the correction's effective time, else None. Mutation point
+        for the no-restatement guard tests."""
+        at = event["effective_at_ms"]
+        for period in sealed_periods:
+            if period["start_ms"] <= at < period["end_ms"]:
+                return period
+        return None
+
+    def apply_correction(self, events, sealed_periods=()):
+        """Apply Lost/recovery corrections with a billing-period watermark
+        (usage-ledger #3 no-restatement): a correction whose effective time
+        intersects a CLOSED (sealed) period is flagged for MANUAL handling and
+        NOT auto-applied — sealed-period totals are never rewritten
+        retroactively (恢復後不重疊、不回溯改已封帳數量). Corrections outside
+        every sealed window append normally; replacement events drive the
+        recompute, both versions are kept via the projection archive.
+        """
+        receipts = []
+        for event in events:
+            event = dict(event)
+            self._validate(event)
+            hit = self._sealed_period_hit(event, sealed_periods)
+            if hit is None:
+                receipts.append(self.append(event))
+                continue
+            self._counter += 1
+            flag = {"flag_id": self._counter,
+                    "reason": "correction intersects sealed billing period: manual handling required",
+                    "event_id": event["event_id"], "period": hit["period"],
+                    "effective_at_ms": event["effective_at_ms"]}
+            self._flags.append(flag)
+            receipts.append({"status": "flagged_manual", "flag_id": flag["flag_id"],
+                             "period": hit["period"]})
+        return receipts
 
     # ------------------------------------------------------------ outbox
     def _outbox_for(self, event_id):
