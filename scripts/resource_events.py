@@ -181,14 +181,22 @@ class EventLedger:
     def _fold(self, events):
         """Deterministic per-resource projection from the event list.
 
-        Fold order is (effective time, append order); a late-arriving trusted
-        stop with an effective time inside a Lost gap is therefore folded
-        before the lease expiry and corrects the projection (both versions
-        kept via _apply's archive). Segments are half-open [start, end);
-        zero-length segments are dropped (zero usage).
+        Fold order is (effective time, confirmed-before-uncertain, append
+        order): at the same effective time a confirmed stop closes the open
+        segment BEFORE lease.expired can cut it, so a trusted stop arriving
+        exactly at the recovery instant R confirms usage through R with no
+        uncertain gap (usage-ledger #1: at the same instant the old vector
+        terminates first; confirmed evidence beats uncertainty). A
+        late-arriving trusted stop inside a Lost gap likewise folds before
+        the lease expiry and corrects the projection (both versions kept via
+        _apply's archive). Segments are half-open [start, end); zero-length
+        segments are dropped (zero usage).
         """
-        ordered = sorted(enumerate(events),
-                         key=lambda pair: (self._projection_time(pair[1]), pair[0]))
+        def fold_key(pair):
+            idx, ev = pair
+            uncertain = 1 if ev["type"] == "lease.expired" else 0
+            return (self._projection_time(ev), uncertain, idx)
+        ordered = sorted(enumerate(events), key=fold_key)
         segments, open_seg, last_heartbeat = [], None, None
         for _, ev in ordered:
             etype = ev["type"]
@@ -328,6 +336,7 @@ class EventLedger:
             "flags": copy.deepcopy(self._flags),
             "outbox": copy.deepcopy(self._outbox),
             "commit_seq": self._commit_seq,
+            "counter": self._counter,
             "clock": self._clock,
         }
 
@@ -350,6 +359,7 @@ class EventLedger:
         ledger._outbox = copy.deepcopy(data["outbox"])
         ledger._outbox_by_event = {e["event_id"]: e for e in ledger._outbox}
         ledger._commit_seq = data["commit_seq"]
+        ledger._counter = data["counter"]
         ledger._clock = data["clock"]
         return ledger
 

@@ -296,6 +296,19 @@ class Uncertainty(unittest.TestCase):
                          (1000, 3000))
         self.assertGreater(before["uncertain_ms"], after["uncertain_ms"])
 
+    def test_correction_stop_exactly_at_recovery_instant(self):
+        ledger = lost_ledger()
+        # trusted stop effective exactly at R (the lease.expired instant 3000)
+        late = event("runtime.stopped", "runtime", "r1", 3000)
+        late["recorded_at_ms"] = 3500
+        ledger.append(late)
+        after = ledger.summarize()["runtime/r1"]
+        self.assertEqual(after["confirmed_quantity_ms"], {"cpu_reserved": 3_000_000})
+        self.assertEqual(after["uncertain_ms"], 0)
+        uncertain_old = [seg for seg in ledger.superseded("runtime/r1")
+                         if seg["certainty"] == "uncertain"]
+        self.assertEqual(len(uncertain_old), 1)
+
 
 class PersistenceAndReplay(unittest.TestCase):
     def test_restart_keeps_events_and_totals(self):
