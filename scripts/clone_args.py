@@ -18,7 +18,7 @@ def validate_repo_url(url):
         return False, 'scheme must be https, got %r' % parsed.scheme
     if not parsed.hostname:
         return False, 'missing host'
-    if parsed.username or parsed.password:
+    if parsed.username is not None or parsed.password is not None:
         return False, 'userinfo in url not allowed'
     return True, 'ok'
 

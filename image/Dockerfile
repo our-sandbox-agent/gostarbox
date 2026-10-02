@@ -7,7 +7,7 @@ USER root
 RUN rm -f /etc/apt/sources.list.d/debian.sources && \
     printf '%s\n' \
       'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20260926T000000Z bookworm main' \
-      'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20260926T000000Z bookworm-security main' \
+      'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian-security/20260926T000000Z bookworm-security main' \
       > /etc/apt/sources.list && \
     apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates git tmux procps && \
