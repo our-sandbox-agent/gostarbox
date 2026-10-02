@@ -1,6 +1,6 @@
 # T01：Docker + runsc + Claude 最小驗證
 
-Refs #8，依賴 [#7 契約 PR](https://github.com/our-sandbox-agent/sandbox-console/pull/47)。狀態：**無 key 實測已交付，E09 PID 阻塞；E05／E10 待憑證與預算，尚不可 go**。詳見 [2026-09-27 結果](gvisor-no-key-results-20260927.md)。這不是 #10 正式映像檔或 #11 Runner。
+Refs #8，依賴 [#7 契約 PR](https://github.com/our-sandbox-agent/sandbox-console/pull/47)。狀態：**無 key 實測已交付，E09 PID 阻塞；E05／E10 待憑證與預算，尚不可 go**。詳見 [2026-09-27 結果](gvisor-no-key-results-20260927.md)。這不是 #10 正式映像檔或 #11 Runner。研究現況總覽見 [gVisor 研究索引](README.md)。
 
 下一輪操作入口：[測試環境交接、重跑流程與證據包](gvisor-environment.md)。使用 `scripts/gvisor-report.py` 產生十列 not_run 報告並檢查證據完整性；不能以工具或 CI 通過關閉 #8。
 

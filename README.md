@@ -2,13 +2,11 @@
 
 AI Agent 沙盒產品的第一版可操作介面。這是本機模擬，沒有真正的 VM、Agent API、shell 執行或收費。
 
-本輪採用暫定品牌「星際工作站 NexSpace」，以軌道與 N 字母組成簡單字標。產品願景是「給 AI Agent 一個獨立工作空間。關上筆電，任務繼續。」此願景尚未由雛形實作：目前關閉頁面後，模擬計時會暫停。
+本輪採用暫定品牌「星際工作站 NexSpace」，以軌道與 N 字母組成簡單字標；字標尚未核准，repo 名稱 `gostarbox` 只是儲存庫名稱，不代表品牌定案。產品願景是「給 AI Agent 一個獨立工作空間。關上筆電，任務繼續。」此願景尚未由雛形實作：目前關閉頁面後，模擬計時會暫停。
 
-品牌預覽不變更 `sandbox` 模擬指令、瀏覽器儲存 key 或 GitHub Pages 路徑；NexSpace.fyi 尚未在此專案設定或啟用。
+品牌預覽不變更 `sandbox` 模擬指令、瀏覽器儲存 key 或 GitHub Pages 路徑。網域 nexspace.fyi 已由創辦人購得，僅規劃供開發與測試用途；DNS 尚未設定，本專案未啟用任何正式網域服務。
 
-[桌面與手機品牌預覽](docs/brand/README.md)
-
-線上展示：https://our-sandbox-agent.github.io/gostarbox/
+可用的連結：[桌面與手機品牌預覽](docs/brand/README.md)（預覽圖與說明）、線上展示 https://our-sandbox-agent.github.io/gostarbox/ （GitHub Pages，PR #81 修復 base 路徑後的位址）。
 
 ## 啟動
 

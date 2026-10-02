@@ -1,12 +1,12 @@
 # 3–5 人受限試用：放行規格
 
-Proposed，2026-09-22。Closes #46（規格）；依賴 [#7 契約提案](https://github.com/our-sandbox-agent/sandbox-console/pull/47)。
+Proposed，2026-09-22。#46 規格已交付（PR #48 已合併、2026-09-21 關票）；**實際放行由 [#79](https://github.com/our-sandbox-agent/gostarbox/issues/79) 追蹤**。規格合併不代表 G01–G10 任一列已通過。
 
 **做完會看到：** 受邀者可以關掉筆電，稍後重連 Claude 並取回成果；事故時有人能停新增工作、撤銷存取及還原資料。
 **先不保證：** 記憶體恢復、完整 key 代理、完整外網 allowlist、正式帳單或 SLA。
-**何時能邀：** 以下必要列全部有通過證據，填完配置表，創辦人明確放行。合併本文件只完成規格，不表示實測通過或授權發邀請。
+**何時能邀：** 以下必要列全部有通過證據，填完配置表，創辦人明確放行（#79 簽核）。合併本文件只完成規格，不表示實測通過或授權發邀請。
 
-這是已決定的「先 3–5 人受限試用，再完整 Alpha」落地方式。#24 的完整依賴維持不變。清單中的措施是本次提案；若要刪除必要列，須在 PR 說明風險並重新對齊，不能以熟人代替控制。
+這是已決定的「先 3–5 人受限試用，再完整 Alpha」落地方式。放行順序：#8 人工 feasibility GO → M1 內部可用（#10–#15、#76、#77）→ 逐列完成 G01–G10 必要控制（#78 先做 G04 子範圍）→ #79 簽核。#79 不是 #10／#11 或 M1 的前置。#24 的完整依賴維持不變。清單中的措施是本次提案；若要刪除必要列，須在 PR 說明風險並重新對齊，不能以熟人代替控制。
 
 ## 必要控制與驗收
 
@@ -17,7 +17,7 @@ Proposed，2026-09-22。Closes #46（規格）；依賴 [#7 契約提案](https:
 | G01 #8/#10/#11 | 固定 runsc、非 root、無 privileged／Docker socket／host mount；資源限額 | 保存 gVisor 矩陣 go；容器不能取得宿主／其他租戶資源；實際 CPU、記憶體、PID 限制生效 |
 | G02 #15/#16 | 邀請名單及每次資源授權；CLI/Web/API/WS/download 一致 | 兩個測試帳戶互換 sandbox、operation、volume ID，跨租戶一律拒絕且無資料；撤銷邀請後既有 token/WS 也失效 |
 | G03 #12/#21 | API key 僅短期注入，禁止寫入 DB、log、trace、image、workspace/home volume、一般 backup；禁止 tmpfs 秘密換頁到未加密 swap／core dump | 用可辨識假秘密跑 create、錯誤、重連、cold stop/start/destroy，掃描輸出、tmpfs、env、兩顆 volume（含 home 內 Claude 設定檔）與備份皆無假秘密；停止後注入消失；缺 key 不啟動；使用者可撤銷供應商 key |
-| G04 #22 | 阻擋宿主、控制平面、其他租戶、私網、link-local、metadata；覆蓋 IPv4/IPv6、DNS 及 redirect | 測試 direct IP、DNS 解析到受限 IP、重新解析、HTTP redirect 及 policy 更新前連線；拒絕目的地不能靠 hostname 字串黑名單；必要公開 Git/套件/模型流量仍成功 |
+| G04 #22/#78 | 阻擋宿主、控制平面、其他租戶、私網、link-local、metadata；覆蓋 IPv4/IPv6、DNS 及 redirect | 測試 direct IP、DNS 解析到受限 IP、重新解析、HTTP redirect 及 policy 更新前連線；拒絕目的地不能靠 hostname 字串黑名單；必要公開 Git/套件/模型流量仍成功。#78 是本列的 #22 G04 子範圍先行票 |
 | G05 #11/#17/#18 | 主機及租戶原子容量預留、磁碟限額、預留 headroom；獨立 watchdog；Lost 不釋放未知資源 | 同時 create 超配只允許可容納數量；kill Runner、網路中斷、磁碟滿、容器 OOM 後，無雙開／跨租戶影響；host fencing 有證據，容量確認停止才歸還 |
 | G06 #12/#23 | workspace/home 保存範圍明確；備份 allowlist、加密、權限與刪除期限 | 寫入成果＋對話後 cold restart 驗 hash/session；備份在獨立空白目的地還原且不可跨租戶讀；假 key/gh token 不在備份；刪除與 retention 到期可驗證；單一受邀者退出演練：撤銷後其全部 sandbox、volume 與備份在放行表填的期限內確認消失，只剩不含專案內容的 tombstone/audit |
 | G07 #13/#14/#20 | 斷線不停止、可重連；使用者 push 或只下載 cp 取回成果；資料夾打包上傳（簡單版）含大小上限與忽略清單 | 交代工作後關客戶端一小時，再接回看到結果並取回；push 無權限仍可 cp；跨租戶、`..`、symlink、archive 解壓逃逸均拒絕；上傳超過上限被拒、`.env` 等被忽略且 UI 列出 |
@@ -32,11 +32,11 @@ G03 的排除是平台處理保證；Agent 在沙盒內仍可讀 key 並可能�
 | 延後項目 | 受限期替代措施與剩餘風險 | 完整驗收 |
 |---|---|---|
 | 完整模型 key proxy | ephemeral 注入、專用 Anthropic workspace、使用者設定 workspace 花費上限與撤銷流程；沙盒仍可讀 key，專用 key 不是獨立花費上限 | #21 |
-| 完整外部 domain allowlist | G04 內網隔離不可延後；容許必要公開外網，仍有對外傳出資料風險，限受邀者且揭露 | #22 |
+| 完整外部 domain allowlist | G04 內網隔離不可延後（#22 子範圍 #78 先行）；容許必要公開外網，仍有對外傳出資料風險，限受邀者且揭露 | #22 |
 | 正式 SLA／完整營運平台 | 人工值守窗口、實测還原、事故聯絡人；窗口外不承諾回應時間 | #23/#24 |
 | 正式 billing、記憶體快照、多 Agent | 用量紀錄；冷恢復重新起程序；只有 Claude API key | #25–#38 |
 
-試用控制只算對應大票的子範圍完成，不可因本清單放行就關掉 #21/#22/#23/#24。#24 仍是擴大邀請前的完整 Alpha gate。
+試用控制只算對應大票的子範圍完成，不可因本清單放行就關掉 #21/#22/#23/#24。#46 規格完成不代表 G01–G10 已通過；實際放行證據與簽核由 #79 追蹤，#24 仍是擴大邀請前的完整 Alpha gate。
 
 ## 每次放行的配置及證據表
 
