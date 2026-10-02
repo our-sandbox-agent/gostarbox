@@ -8,7 +8,7 @@ AI Agent 沙盒產品的第一版可操作介面。這是本機模擬，沒有�
 
 [桌面與手機品牌預覽](docs/brand/README.md)
 
-線上展示：https://our-sandbox-agent.github.io/sandbox-console/
+線上展示：https://our-sandbox-agent.github.io/gostarbox/
 
 ## 啟動
 
@@ -19,7 +19,7 @@ npm ci
 npm run dev -- --port 4173
 ```
 
-開啟 http://localhost:4173/sandbox-console/ 。`npm run build` 產生靜態頁面於 `dist/`。
+開啟 http://localhost:4173/gostarbox/ （`npm run preview` 同路徑：http://127.0.0.1:4173/gostarbox/ ）。`npm run build` 產生靜態頁面於 `dist/`。
 
 `npm test` 執行狀態計時與檔案測試：重新整理接續、關頁不計時、手動 Idle 倒數、延遲回呼跨越多個狀態、切換前的時間結算，以及檔案隔離、刪除與上傳的交易回滾與重試、重複提交、Suspend 保護、覆寫前的衝突判定與重新確認。
 
