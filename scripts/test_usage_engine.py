@@ -285,6 +285,18 @@ class RateCardRules(unittest.TestCase):
         self.assertEqual(card.upsert(cpu_rate(1, 1, 0), now_ms=0),
                          {"status": "unchanged", "closed": []})
 
+    def test_rejected_upsert_leaves_card_untouched(self):
+        # validation must precede mutation: a refused replace cannot delete
+        # the stored future row (would silently unprice its range)
+        card = RateCard()
+        card.upsert(cpu_rate(1, 1, 0), now_ms=0)
+        card.upsert(cpu_rate(2, 2, 5000), now_ms=0)
+        before = [repr(e) for e in card.entries("cpu_reserved")]
+        with self.assertRaises(ValueError):
+            card.upsert(cpu_rate(2, 2, 1000), now_ms=4000)
+        after = [repr(e) for e in card.entries("cpu_reserved")]
+        self.assertEqual(before, after)
+
     def test_new_version_closes_open_predecessor(self):
         card = RateCard()
         card.upsert(cpu_rate(1, 1, 0), now_ms=0)

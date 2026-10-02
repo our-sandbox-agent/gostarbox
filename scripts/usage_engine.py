@@ -175,13 +175,18 @@ class RateCard:
             if existing == entry:
                 return {"status": "unchanged", "closed": []}
             self._check_history_immutable(existing, entry, now_ms)
-            self._entries.remove(existing)
-        closed = self._insert(entry, now_ms)
+        closed = self._insert(entry, now_ms, replace=existing)
         return {"status": "appended", "closed": closed}
 
-    def _insert(self, entry, now_ms):
+    def _insert(self, entry, now_ms, replace=None):
+        # Validation precedes ALL mutation: collect truncations first, apply
+        # only after every check passed — a rejected upsert must leave the
+        # card byte-identical (spec: conflicts change nothing).
         closed = []
-        for other in list(self._entries):
+        to_close = []
+        for other in self._entries:
+            if other is replace:
+                continue
             if self._price_key(other) != self._price_key(entry):
                 continue
             if not self._overlap(other, entry):
@@ -198,6 +203,10 @@ class RateCard:
                 raise ValueError(
                     f"would punch an unpriced hole into {other.rate_id} v{other.version}; "
                     f"later versions must extend to or past the predecessor's end")
+            to_close.append(other)
+        if replace is not None:
+            self._entries.remove(replace)
+        for other in to_close:
             # future-only truncation: the predecessor hands over at entry's start
             self._entries.remove(other)
             self._entries.append(dataclasses.replace(
