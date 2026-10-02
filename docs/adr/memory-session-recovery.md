@@ -1,7 +1,9 @@
 # Memory termination and recovery policy (#67)
 
 Status: **Proposed**, 2026-09-27; founder decision required before trial release.
-This specifies future #11/#19 behavior. It does not implement or unblock them.
+This specifies future behavior, split by responsibility: runtime instance recreation
+under #11, operation/generation/reconcile under #17, automatic recovery strategy under #19.
+It does not implement or unblock them.
 
 ## Decision supported by measurements
 
