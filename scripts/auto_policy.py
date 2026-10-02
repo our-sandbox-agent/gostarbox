@@ -72,7 +72,6 @@ BUSY_UNKNOWN = "unknown_busy"    # hook 遺失／過期／malformed: KEEP + aler
 _WAKE_KEYS = ("user_input", "new_task")
 # Signals accepted and deliberately NEVER consulted as activity
 # (terminal-protocol activity classes: liveness, layout, server_stream):
-_NOT_ACTIVITY_KEYS = ("ping", "resize", "output")
 
 
 def _is_num(value):
@@ -210,8 +209,11 @@ def _busy_status(state, signals, now):
     → unknown_busy, never done. A completion report only lifts protection
     when it matches the claimed work_id and the current generation —
     晚到的舊完成訊號不能蓋掉新 busy (ADR section 4)."""
-    if signals.get("busy_hook_installed") is False:
-        return BUSY_UNKNOWN, ["busy_hook_missing"], True   # hook 遺失
+    hook = signals.get("busy_hook_installed")
+    if hook is False or (hook is not None and hook is not True):
+        # hook 遺失 (False) or non-boolean garbage ('yes', 1): conservative
+        # unknown, never treated as no-busy. Absent (None) = not reported.
+        return BUSY_UNKNOWN, ["busy_hook_missing"], True
     report, claim = signals.get("busy"), state.get("busy")
     dropped_stale = False
     if report is not None and not _admissible_generation(report, state):

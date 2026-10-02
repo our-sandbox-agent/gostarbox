@@ -438,9 +438,13 @@ class ServerCountdown(unittest.TestCase):
     def test_ping_resize_do_not_refresh_the_anchor(self):
         # liveness/layout frames arriving now never move last_signal: the
         # countdown keeps running (decide-side rows assert the demotion)
-        before = countdown(BASE_POLICY, 100, 0)
-        after = countdown(BASE_POLICY, 100, 0)   # server saw only pings
-        self.assertEqual(before, after)
+        # pings/resize arriving now never move last_signal (only user_input
+        # anchors); assert via decide: ping+resize at the timer boundary do
+        # not stop the Idle demotion
+        out = decide({"observed_state": "Active", "last_user_input_at": 0},
+                     {"now": 100, "ping": True, "resize": True},
+                     dict(BASE_POLICY, idle_after_seconds=100))
+        self.assertEqual(out["action"], "request_idle")
 
 
 class PolicyValidation(unittest.TestCase):
@@ -455,7 +459,7 @@ class PolicyValidation(unittest.TestCase):
     def test_invalid_policy_values_raise(self):
         for bad in ({"idle_after_seconds": 0}, {"idle_after_seconds": -5},
                     {"idle_after_seconds": "60"},
-                    {"suspend_after_seconds": 2.5 if False else "x"},
+                    {"suspend_after_seconds": "x"},
                     {"cpu_demand_threshold_milli": -1},
                     {"demotion_cooldown_seconds": -1},
                     {"auto_idle_enabled": "yes"},
