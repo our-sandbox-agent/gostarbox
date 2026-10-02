@@ -296,6 +296,23 @@ class SealedPeriodNoRestatement(unittest.TestCase):
         self.assertEqual(row["confirmed_quantity_ms"], {"cpu_reserved": 2_000_000})
         self.assertEqual(row["uncertain_ms"], 0)
 
+    def test_lease_correction_straddling_seal_flagged(self):
+        # effective time outside the seal, but the uncertain CUT
+        # (last_observed_at_ms) sits inside the sealed window: the gap
+        # straddles the boundary and must not restate sealed totals
+        ledger = self._lost_ledger()
+        sealed = ({"period": "2026-08", "start_ms": 0, "end_ms": 1000},)
+        before = ledger.summarize()["runtime/r1"]["confirmed_quantity_ms"]
+        straddle = envelope("manual", 102, {
+            "type": "lease.expired", "resource_type": "runtime",
+            "resource_id": "r1", "effective_at_ms": 2000,
+            "recorded_at_ms": 5000,
+            "payload": {"last_observed_at_ms": 500}})
+        receipts = ledger.apply_correction([straddle], sealed)
+        self.assertEqual(receipts[0]["status"], "flagged_manual")
+        after = ledger.summarize()["runtime/r1"]["confirmed_quantity_ms"]
+        self.assertEqual(before, after)  # sealed totals untouched
+
     def test_sealed_window_boundaries_are_half_open(self):
         ledger = self._lost_ledger()
         at_start = envelope("m0", 102, {"type": "runtime.stopped",

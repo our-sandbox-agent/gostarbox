@@ -321,11 +321,20 @@ class EventLedger:
     # -------------------------------------------------------- corrections
     def _sealed_period_hit(self, event, sealed_periods):
         """Return the sealed period whose half-open [start_ms, end_ms) window
-        contains the correction's effective time, else None. Mutation point
-        for the no-restatement guard tests."""
-        at = event["effective_at_ms"]
+        contains the correction's effective time — or, for lease.expired
+        corrections, whose window contains the uncertain cut point
+        (last_observed_at_ms) — else None. Mutation point for the
+        no-restatement guard tests: a gap STRADDLING a seal boundary must
+        not restate sealed-window totals even when effective_at lands
+        outside the window."""
+        candidates = [event["effective_at_ms"]]
+        if event.get("type") == "lease.expired":
+            observed = (event.get("payload") or {}).get("last_observed_at_ms")
+            if observed is not None:
+                candidates.append(observed)
         for period in sealed_periods:
-            if period["start_ms"] <= at < period["end_ms"]:
+            if any(period["start_ms"] <= at < period["end_ms"]
+                   for at in candidates):
                 return period
         return None
 
