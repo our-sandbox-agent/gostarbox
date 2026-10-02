@@ -26,6 +26,7 @@
 | [r03-snapshot-fork-protocol.md](r03-snapshot-fork-protocol.md) | R03（#33）磁碟 Snapshot／Fork 與憑證處理協定：disk 快照先行、memory 快照列依 R02；規劃中，**未執行** |
 | [r04-resume-upload-protocol.md](r04-resume-upload-protocol.md) | R04（#34）500 MB 續傳與資料夾可靠匯入協定：tus 授權綁 workspace/upload id、斷點續接與 Caddy 代理實測；規劃中，**未執行** |
 | [r05-git-autosave-protocol.md](r05-git-autosave-protocol.md) | R05（#35）選用的 Suspend 前 Git 自動存檔協定：repo-scoped 憑證鐵門、HEAD/index 不變與 force-with-lease 語意、停機不被 push 卡住；規劃中，**未執行** |
+| [r06-firecracker-eval-protocol.md](r06-firecracker-eval-protocol.md) | R06（#36）Firecracker 需求／主機／成本門檻評估協定：條件式開工（仍未授權切換 runtime）、KVM 硬條件檢查、cold restart／warm restore cold-cache／warm-cache 分列、價格當日查證；規劃中，**未執行** |
 | [evidence/](evidence/) | 遮蔽後的原始證據包（歷史紀錄，保留原狀） |
 
 E05／E10 的付費實測由 #75 追蹤；#75 完成只補執行證據，不自動完成 #8 的人工 GO。
