@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "title": "Internal control-plane REST API contract (M1 single tenant)",
+  "status": "Proposed",
+  "source_of_truth": [
+    "docs/adr/sandbox-lifecycle.md section 3 (Proposed, 2026-09-22): unified /v1 API — endpoint names, state/operation semantics are normative here",
+    "docs/adr/usage-ledger.md section 1 (Proposed): operation_id / generation / ledger_seq event envelope the API fronts",
+    "docs/contracts/runner-lifecycle.json: state machine and refusals the API fronts; verified by scripts/verify_runner_contract.py",
+    "docs/contracts/cli-surface.json: exit codes the CLI maps from these API errors",
+    "docs/contracts/terminal-protocol.json: hello frame the terminal ticket is presented at",
+    "issue #76: [T09] M1 internal control-plane minimal API"
+  ],
+  "implementation_status": {
+    "executable_double": {
+      "script": "scripts/control_plane_double.py",
+      "contract_tests": "scripts/test_control_plane_contract.py",
+      "nature": "stdlib-only in-memory test double; request(method, path, headers, body) -> (status, json); snapshot()/restore() simulates API restart; no HTTP server, no external deps"
+    },
+    "real_backend": "not started: TypeScript + Hono + Postgres per the language decision; blocked on #11 runner (which waits on the #8 GO)",
+    "deployed": false,
+    "integrated": false
+  },
+  "base_path": "/v1",
+  "auth": {
+    "scheme": "Bearer token on every endpoint",
+    "missing_or_wrong": {"http_status": 401, "code": "unauthorized"},
+    "token_never_logged": true,
+    "binding": "API listens on loopback or an SSH tunnel (or an otherwise verified trusted channel) only; the Runner management interface is reachable only from the control plane"
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/v1/sandboxes",
+      "purpose": "create a sandbox (only agent=claude in M1)",
+      "idempotency_key": "required",
+      "request": {
+        "body": {
+          "agent": "must be the literal 'claude' (422 otherwise)",
+          "resources": {
+            "milli_cpu": "positive integer",
+            "memory_bytes": "positive integer",
+            "volume_bytes": "positive integer (workspace plus approved home)"
+          },
+          "repo_url": "optional https URL",
+          "runtime_deadline_at": "optional UTC epoch ms or null (no default runtime limit)"
+        }
+      },
+      "responses": [
+        {"status": 202, "body": {"sandbox_id": "id", "operation": "operation resource (type create)"}},
+        {"status": 422, "code": "invalid", "when": "agent/resources/repo_url/deadline validation fails"},
+        {"status": 429, "code": "capacity_exceeded", "when": "admission (milliCPU, memory, volume) rejects; no operation, no sandbox"}
+      ],
+      "state_effect": "sandbox enters observed_state=Creating with desired_state=Active, generation=1; observed becomes Active only when the create operation is confirmed by Runner evidence"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sandboxes",
+      "purpose": "list sandboxes (CLI ls / Web); Destroyed tombstones are not listed",
+      "idempotency_key": "not used",
+      "responses": [
+        {"status": 200, "body": {"sandboxes": [{"sandbox_id": "id", "observed_state": "...", "desired_state": "...", "generation": 1}]}}
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sandboxes/{id}",
+      "purpose": "inspect one sandbox (tombstone still queryable after Destroyed)",
+      "idempotency_key": "not used",
+      "responses": [
+        {"status": 200, "body": "desired_state, observed_state, generation, version, pending_operation, last_confirmed_at, volumes, runtime_deadline_at, session (null when unrecorded); Error adds last_confirmed_state and error{code, resources[]}; Active/Idle add hold and next_transition_at (null when no countdown)"},
+        {"status": 404, "code": "not_found", "when": "unknown id — same answer for forged and cross-scope ids, no probe signal"}
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sandboxes/{id}/state",
+      "purpose": "request a state change (Active | Idle | Suspend) via an operation; there is no separate /idle /suspend /resume endpoint (ADR section 3)",
+      "idempotency_key": "required",
+      "request": {
+        "body": {
+          "state": "Active | Idle | Suspend",
+          "expected_version": "integer, must equal the sandbox version",
+          "suspend_mode": "optional; only 'cold' is accepted",
+          "credential": "optional secret re-sent by the CLI for resume; excluded from Idempotency-Key body comparison, never stored, logged, or echoed in the operation payload"
+        }
+      },
+      "responses": [
+        {"status": 202, "body": {"operation": "operation resource (type set_state)"}},
+        {"status": 200, "body": {"sandbox": "current view"}, "when": "same target already synchronously achieved and nothing pending — no second transition"},
+        {"status": 409, "code": "version_conflict", "when": "expected_version mismatch; client must re-read"},
+        {"status": 409, "code": "credentials_required", "when": "Suspend->Active (or Error/Lost retry) without a credential; no operation created, stays Suspend"},
+        {"status": 409, "code": "opposite_operation", "when": "another change is pending, an opposite operation arrives while Suspending, any change while Resuming/Creating/Destroying, state change on Destroyed, or action on Error/Lost before reconciliation/fencing, or an operation undefined for the current state (refuse-on-unknown)"},
+        {"status": 422, "code": "unsupported_suspend_mode", "when": "suspend_mode other than cold"},
+        {"status": 422, "code": "invalid", "when": "state enum or expected_version missing/wrong, or Idempotency-Key header absent"},
+        {"status": 429, "code": "capacity_exceeded", "when": "resume admission (compute) rejects; no operation"}
+      ],
+      "state_effect": "accept moves observed into the acceptance-driven intermediate state only (Suspending / Resuming, per the runner contract transitions); resume from Suspend/Error/Lost allocates a new generation; Idle/Active policy switches keep the previous observed_state with a pending operation until confirmed"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/sandboxes/{id}",
+      "purpose": "destroy: removes processes and first-version workspace/home volumes after explicit scope confirmation",
+      "idempotency_key": "required",
+      "request": {
+        "body": {
+          "expected_version": "integer, must equal the sandbox version",
+          "confirm_scope": "must be the literal 'workspace_and_home_volumes' (explicit data-deletion scope)"
+        }
+      },
+      "responses": [
+        {"status": 202, "body": {"operation": "operation resource (type destroy)"}},
+        {"status": 409, "code": "version_conflict"},
+        {"status": 409, "code": "opposite_operation", "when": "destroy while Suspending/Resuming (no contract transition), or on Error/Lost before reconciliation, or a state change on Destroyed"},
+        {"status": 422, "code": "invalid", "when": "expected_version or confirm_scope missing/wrong, or Idempotency-Key absent"}
+      ],
+      "state_effect": "accept moves observed to Destroying; repeating destroy after Destroyed returns the existing operation, never a second one (destroyed_is_terminal)"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/operations/{operation_id}",
+      "purpose": "poll an operation to its terminal state",
+      "idempotency_key": "not used",
+      "responses": [
+        {"status": 200, "body": "operation resource"},
+        {"status": 404, "code": "not_found"}
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sandboxes/{id}/terminal-ticket",
+      "purpose": "mint the short-lived attach credential presented in the terminal protocol hello frame (token field, #12); the attach-time state gate (sandbox_not_active, wrong_generation) belongs to the terminal protocol (#13), not this REST edge",
+      "idempotency_key": "not used",
+      "request": {"body": "{}"},
+      "responses": [
+        {"status": 200, "body": {"ticket": "opaque id", "sandbox_id": "id", "generation": 1, "expires_in_ms": 60000}},
+        {"status": 404, "code": "not_found", "when": "unknown or destroyed sandbox (same answer as terminal reconnect_after_destroy)"}
+      ],
+      "state_effect": "none; tickets are single-purpose, expire, and are invalidated by an API restart"
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/workspaces/{id}/policy",
+      "adr_section_3": true,
+      "implemented_by_double": false,
+      "note": "workspace policy with expected_version, audit trail and effective time; owned by the workspace-policy track, not this slice"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/sandboxes/{id}/deadline",
+      "adr_section_3": true,
+      "implemented_by_double": false,
+      "note": "{runtime_deadline_at: UTC|null, expected_version}, 200 with the new value plus audit; not exercised by this slice's tests"
+    }
+  ],
+  "operation_resource": {
+    "fields": {
+      "operation_id": "opaque id, referenced by usage-ledger events as operation_id",
+      "sandbox_id": "owning sandbox",
+      "type": "create | set_state | destroy",
+      "target": "requested change; never contains the credential",
+      "state": "pending | running | succeeded | failed",
+      "expected_version": "fencing version the request carried (null for create)",
+      "generation": "generation in effect for the operation; resume allocates a new one",
+      "result": "on success: {observed_state, generation}",
+      "error": "on failure: {code, message}",
+      "retryable": "bool; true for failed operations after the client re-reads state"
+    },
+    "semantics": [
+      "every state-change/destroy request answers 202 with the operation; clients poll GET /v1/operations/{id} until succeeded/failed",
+      "at most one change operation per sandbox at a time; conflicts answer 409",
+      "a request timeout does NOT imply not-executed: the client must poll the operation; unknown outcome resolves to Lost via lease expiry, never to an assumption"
+    ]
+  },
+  "idempotency": {
+    "required_on": ["POST /v1/sandboxes", "POST /v1/sandboxes/{id}/state", "DELETE /v1/sandboxes/{id}"],
+    "scope": "per token/tenant and operation scope; one key maps to at most one accepted request",
+    "same_key_same_body": "the original operation is returned again (no double-create, no second transition); replays stay answerable after an API restart because the map is persisted",
+    "same_key_different_body": {"http_status": 409, "code": "body_conflict"},
+    "credential_rule": "the credential field never participates in the body comparison (ADR section 3)",
+    "missing_key": {"http_status": 422, "code": "invalid"}
+  },
+  "runtime_honesty": {
+    "rule": "observed_state is set only from confirmed Runner observation; desired_state alone changes nothing; HTTP 202 is acceptance, not success",
+    "unknown_outcome": "unconfirmed creates stay observed Creating (pending); lease expiry moves the sandbox to Lost — never an optimistic Active",
+    "sources": [
+      "docs/contracts/runner-lifecycle.json invariant observed_not_desired",
+      "docs/adr/usage-ledger.md section 1: accepted request != runtime applied; only confirmed observation switches resource intervals"
+    ]
+  },
+  "security": {
+    "single_tenant_m1": "exactly one workspace; forged workspace/sandbox ids stay inside internal scope — unknown ids answer 404 with no cross-tenant probe signal (multi-tenant authorization is #16)",
+    "secrets": "credentials are never persisted in the general DB, never logged, never echoed in operation payloads or snapshots; the double stores only a has_credential boolean",
+    "missing_credential_on_resume": {"http_status": 409, "code": "credentials_required", "creates_operation": false, "stays": "Suspend"}
+  },
+  "state_machine": {
+    "source": "docs/contracts/runner-lifecycle.json (loaded, not duplicated, by the double)",
+    "rule": "transitions outside the table are refused (refuse-on-unknown); no /idle /suspend /resume endpoints exist"
+  },
+  "capacity_admission": {
+    "checked_on": ["create", "resume"],
+    "api_edge": {"http_status": 429, "code": "capacity_exceeded", "creates_operation": false},
+    "divergence_note": "runner-lifecycle.json records http_status 409 for the runner-side capacity-exceeded refusal; this API edge maps admission rejection to 429 per the #76 slice instruction. Reconcile the two layers when the real backend lands (#11)."
+  },
+  "error_model": {
+    "closed_set": true,
+    "errors": [
+      {"http_status": 401, "code": "unauthorized", "when": "missing/wrong bearer token", "cli_exit": 68},
+      {"http_status": 404, "code": "not_found", "when": "unknown sandbox/operation/endpoint; forged ids", "cli_exit": 65},
+      {"http_status": 409, "code": "version_conflict", "when": "expected_version mismatch", "cli_exit": 65},
+      {"http_status": 409, "code": "body_conflict", "when": "Idempotency-Key replayed with a different body", "cli_exit": 65},
+      {"http_status": 409, "code": "credentials_required", "when": "resume without a credential", "cli_exit": 65},
+      {"http_status": 409, "code": "opposite_operation", "when": "pending conflict, opposite/unknown operation for the state, pre-reconciliation Error/Lost, terminal Destroyed", "cli_exit": 65},
+      {"http_status": 422, "code": "unsupported_suspend_mode", "when": "suspend_mode other than cold", "cli_exit": 64},
+      {"http_status": 422, "code": "invalid", "when": "schema/validation failure incl. missing Idempotency-Key", "cli_exit": 64},
+      {"http_status": 429, "code": "capacity_exceeded", "when": "admission rejects create/resume", "cli_exit": 75},
+      {"http_status": 500, "code": "internal", "when": "control-plane bug", "cli_exit": 70}
+    ],
+    "cli_exit_note": "interim mapping for #14 (cli-surface.json owns the exit codes); 2xx maps to 0"
+  },
+  "verify": {
+    "steps": [
+      "python3 -m unittest discover -s scripts -p 'test_*.py'",
+      "python3 -m compileall -q scripts"
+    ]
+  },
+  "related_tickets": [
+    {"ticket": 76, "role": "owner: this API slice; part 1 contract/test-double, part 2 real Go-runner integration blocked on #11"},
+    {"ticket": 11, "role": "runner prerequisite for real integration"},
+    {"ticket": 8, "role": "GO decision gating #11"},
+    {"ticket": 14, "role": "CLI client of this API"},
+    {"ticket": 15, "role": "Web client of this API"},
+    {"ticket": 12, "role": "session token bootstrap consumed here"},
+    {"ticket": 13, "role": "terminal protocol the terminal-ticket fronts"},
+    {"ticket": 16, "role": "later: invitations/OAuth/full tenant authorization"},
+    {"ticket": 17, "role": "later: failure reconciliation"}
+  ]
+}
