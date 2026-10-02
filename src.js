@@ -3,28 +3,29 @@ import './brand.css';
 import { createFileDeleter, deleteStoredFile } from './file-deletion.js';
 import { planUpload, findConflicts, writeFiles, createUploadWriter } from './file-upload.js';
 import { normalizePolicy, restoreClock, deadline, advance, setState, recordActivity } from './lifecycle.js';
-import { readState, createTabSync } from './tab-sync.js';
+import { createDemoDatasource } from './console-datasource.js';
 import { blogListHTML, blogPostHTML, mountBlogBody, parseBlogHash, hasPost } from './blog.js';
 const icon=(n)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[n]||icons.box}</svg>`;
 const brandMark='<svg class="brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="11" fill="#c1ef8d"/><ellipse cx="20" cy="20" rx="16" ry="7" transform="rotate(-35 20 20)" stroke="#526b43" stroke-width="1.2"/><path d="M14 27V13L26 27V13" stroke="#21341f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="11" r="2.5" fill="#21341f"/></svg>';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const rates={Active:.12,Idle:.03,Suspend:.005};
 const competitors=[['本產品 (示意)',null],['E2B (reserved)',0.1656],['Daytona',0.1656],['Fly Sprites',0.315],['Modal',0.3808],['Vercel (active CPU + mem)',0.3408]];
-let policy;try{policy=JSON.parse(localStorage.getItem('sandbox-policy'))||{};}catch{policy={};}policy=normalizePolicy(policy);
-const savePolicy=()=>{try{localStorage.setItem('sandbox-policy',JSON.stringify(policy));}catch{}};
+const datasource=createDemoDatasource({storage:localStorage});
+let policy=normalizePolicy(datasource.readPolicy()||{});
+const savePolicy=()=>datasource.writePolicy(policy);
 const fmt=n=>{n=Math.max(0,Math.round(n));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0');};
 const seed=()=>[
 {id:'sbx_8f2a1',name:'frontend-playground',agent:'Claude',status:'Active',cpu:2,created:Date.now(),seconds:{Active:1240,Idle:460,Suspend:0},logs:['Sandbox initialized · Ubuntu 24.04','Workspace mounted at /workspace','Claude session ready. Waiting for a task.']},
 {id:'sbx_9c3b2',name:'api-experiments',agent:'Codex',status:'Idle',cpu:4,created:Date.now(),seconds:{Active:780,Idle:2220,Suspend:0},logs:['Codex session ready.','Task finished. Sandbox is idle.']},
 {id:'sbx_2d4e3',name:'research-agent',agent:'Harness',status:'Suspend',cpu:2,created:Date.now(),seconds:{Active:340,Idle:120,Suspend:5800},logs:['Harness session initialized.','Sandbox suspended. Workspace preserved (demo).']}
 ];
-const storedState=readState(localStorage,'sandbox-v1');
+const storedState=datasource.read();
 let boxes=storedState?.boxes;
 if(!Array.isArray(boxes)||!boxes.length||!boxes.every(b=>rates[b.status]!==undefined&&b.seconds&&b.logs))boxes=seed();
 boxes.forEach(b=>{restoreClock(b,Date.now());b.snapshots||=[];b.repo||='';});
 const touch=b=>recordActivity(b,Date.now(),policy);
 let selected=boxes[0].id,view='sandboxes',filter='All',query='',tab='terminal',agent='Claude',files=[],fileError='',blogSlug=null;
-const sync=createTabSync({storage:localStorage,key:'sandbox-v1',revision:storedState?.revision||0,get:()=>boxes,adopt:next=>{boxes=next;boxes.forEach(b=>{b.snapshots||=[];b.repo||='';});}});
+const sync=datasource.createSync({revision:storedState?.revision||0,get:()=>boxes,adopt:next=>{boxes=next;boxes.forEach(b=>{b.snapshots||=[];b.repo||='';});}});
 const reselect=()=>{if(!boxes.some(b=>b.id===selected))selected=boxes[0]?.id;};
 const refresh=()=>{if(sync.refresh()){reselect();return true;}return false;};
 const save=()=>{tick(false);try{if(!sync.write()){reselect();render();}}catch{toast('瀏覽器儲存空間不足，變更只保留至此次頁面關閉。');}};
