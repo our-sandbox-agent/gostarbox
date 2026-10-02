@@ -38,7 +38,12 @@ npm run dev -- --port 4173
 - 從 git repo URL 建立沙盒（模擬 clone）。
 - 終端新增 sandbox ls / connect <id> / suspend / snapshot、git status。
 - Usage 頁與 E2B、Daytona、Modal、Fly Sprites、Vercel 的同小時工作成本比較。
+- Blog：以 MDX 撰寫的文章列表與內文，支援 `#/blog/<slug>` 深度連結，重新整理後接續。
 - 手機與桌面布局。
+
+## 部落格
+
+文章放在 `content/blog/*.mdx`，frontmatter 需含 `title`、`date`、`description`、`tags`、`lang`。新增文章即加檔案，列表與路由自動產生，不需改 HTML。MDX 於建置時編譯（`@mdx-js/rollup` + Preact），編譯錯誤會使 `npm run build` 與 CI 失敗；正文中 `<` 與 `{` 是 JSX 語法，需以字元實體或反引號包裹。
 
 ## 研究與建議
 
