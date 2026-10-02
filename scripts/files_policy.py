@@ -315,7 +315,9 @@ def ignore_filter(paths, include_git=False):
                     if include_git else IGNORE_SEGMENTS)
     kept, excluded = [], []
     for path in paths:
-        parts = [part for part in str(path).split("/") if part]
+        # backslash is a separator everywhere else in this module; normalize
+        # it here too so `src\.env` can't smuggle credentials past the filter
+        parts = [part for part in str(path).replace("\\", "/").split("/") if part]
         name = parts[-1] if parts else ""
         if (any(part in dir_segments for part in parts)
                 or any(fnmatch.fnmatchcase(name, pattern)

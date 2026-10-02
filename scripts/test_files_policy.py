@@ -310,14 +310,16 @@ class TestIgnoreFilter(unittest.TestCase):
                  "cert.pem", "keys/server.pem", "id_rsa", "id_rsa.pub",
                  "ssh/id_rsa.example", "node_modules/pkg/x.js",
                  "a/node_modules", ".git/HEAD", "env.txt", "pem.txt",
-                 "my_id_rsa_notes.md", "README.md"]
+                 "my_id_rsa_notes.md", "README.md",
+                 "src\\.env", "ssh\\id_rsa"]
         kept, excluded = ignore_filter(paths)
         self.assertEqual(kept, ["src/a.py", ".git/HEAD", "env.txt",
                                 "pem.txt", "my_id_rsa_notes.md", "README.md"])
         self.assertEqual(excluded, [".env", ".env.local", "config/.env.prod",
                                     "cert.pem", "keys/server.pem", "id_rsa",
                                     "id_rsa.pub", "ssh/id_rsa.example",
-                                    "node_modules/pkg/x.js", "a/node_modules"])
+                                    "node_modules/pkg/x.js", "a/node_modules",
+                                    "src\\.env", "ssh\\id_rsa"])
 
     def test_git_segment_optional(self):
         paths = [".git/HEAD", "proj/.git/config", "src/a.py"]
