@@ -189,7 +189,6 @@ async function chooseOverwrite(mode) {
 overwriteSkip.onclick = () => chooseOverwrite('skip');
 overwriteConfirm.onclick = () => chooseOverwrite('overwrite');
 window.addEventListener('pageshow',e=>{if(e.persisted){sync.refresh();boxes.forEach(b=>restoreClock(b,Date.now()));render();}});
-window.addEventListener('pageshow',e=>{if(e.persisted){boxes.forEach(b=>restoreClock(b,Date.now()));render();}});
 const openBlog=m=>{view='blog';blogSlug=m.slug&&hasPost(m.slug)?m.slug:null;return Boolean(m.slug)&&!blogSlug;};
 window.addEventListener('hashchange',()=>{const m=parseBlogHash();if(!m){if(view==='blog'){view='sandboxes';blogSlug=null;render();}return;}if(openBlog(m))toast('找不到這篇文章。');render();});
 const initialHash=parseBlogHash();if(initialHash)openBlog(initialHash);
