@@ -67,13 +67,13 @@ class TestAuthorizeMatrix(unittest.TestCase):
             request = {"endpoint_class": endpoint, "resource_id": f"{endpoint}-a",
                        "user": "alice"}
             self.assertEqual(
-                self.authz(self.hash_a, "ws_a", request), ALLOW, endpoint)
+                self.authz(self.hash_a, "ws_a", "alice", request), ALLOW, endpoint)
 
     def test_cross_workspace_404_all_classes(self):
         for endpoint in ENDPOINT_CLASSES:
             request = {"endpoint_class": endpoint, "resource_id": f"{endpoint}-b",
                        "user": "alice"}
-            decision = self.authz(self.hash_a, "ws_a", request)
+            decision = self.authz(self.hash_a, "ws_a", "alice", request)
             self.assertEqual(decision.status, 404, endpoint)
             self.assertFalse(decision.allowed)
 
@@ -82,15 +82,15 @@ class TestAuthorizeMatrix(unittest.TestCase):
             request = {"endpoint_class": endpoint, "resource_id": "forged-id",
                        "user": "alice"}
             self.assertEqual(
-                self.authz(self.hash_a, "ws_a", request), NOT_FOUND, endpoint)
+                self.authz(self.hash_a, "ws_a", "alice", request), NOT_FOUND, endpoint)
 
     def test_cross_workspace_indistinguishable_from_unknown(self):
         """No probe signal: forged and cross-workspace ids answer identically."""
         for endpoint in ENDPOINT_CLASSES:
-            cross = self.authz(self.hash_a, "ws_a",
+            cross = self.authz(self.hash_a, "ws_a", "alice",
                                {"endpoint_class": endpoint,
                                 "resource_id": f"{endpoint}-b", "user": "alice"})
-            unknown = self.authz(self.hash_a, "ws_a",
+            unknown = self.authz(self.hash_a, "ws_a", "alice",
                                  {"endpoint_class": endpoint,
                                   "resource_id": "no-such-id", "user": "alice"})
             self.assertEqual(cross, unknown, endpoint)
@@ -99,7 +99,7 @@ class TestAuthorizeMatrix(unittest.TestCase):
         for endpoint in ENDPOINT_CLASSES:
             request = {"endpoint_class": endpoint, "resource_id": f"{endpoint}-a"}
             self.assertEqual(
-                self.authz(None, None, request), UNAUTHORIZED, endpoint)
+                self.authz(None, None, None, request), UNAUTHORIZED, endpoint)
 
     def test_revoked_token_401_all_classes(self):
         # revocation is enforced where workspace_of_token is resolved: a
@@ -111,7 +111,7 @@ class TestAuthorizeMatrix(unittest.TestCase):
             request = {"endpoint_class": endpoint, "resource_id": f"{endpoint}-a",
                        "user": "alice"}
             self.assertEqual(
-                self.authz(self.hash_a, workspace, request), UNAUTHORIZED,
+                self.authz(self.hash_a, workspace, "alice", request), UNAUTHORIZED,
                 endpoint)
 
     def test_cross_user_same_workspace_403(self):
@@ -120,18 +120,34 @@ class TestAuthorizeMatrix(unittest.TestCase):
         hash_c = self.registry.register("token-carol", "ws_a", user="carol")
         request = {"endpoint_class": "secrets", "resource_id": "secrets-a",
                    "user": "carol"}
-        self.assertEqual(self.authz(hash_c, "ws_a", request), FORBIDDEN)
+        self.assertEqual(self.authz(hash_c, "ws_a", "carol", request), FORBIDDEN)
         # a workspace-scoped (ownerless) resource stays shared-readable
         self.authz.register_resource("ws-a-policy", "ws_a")
-        self.assertEqual(self.authz(hash_c, "ws_a",
+        self.assertEqual(self.authz(hash_c, "ws_a", "carol",
                                     {"endpoint_class": "api",
-                                     "resource_id": "ws-a-policy",
-                                     "user": "carol"}), ALLOW)
+                                     "resource_id": "ws-a-policy"}), ALLOW)
 
     def test_unknown_endpoint_class_rejected(self):
         with self.assertRaises(ValueError):
-            self.authz(self.hash_a, "ws_a",
+            self.authz(self.hash_a, "ws_a", "alice",
                        {"endpoint_class": "admin", "resource_id": "x"})
+
+    def test_spoofed_request_user_ignored(self):
+        # carol's token claims user=alice inside the request body — the
+        # principal comes from the token record only, so alice's user-scoped
+        # secret stays forbidden (and no user field means the same).
+        hash_c = self.registry.register("token-carol", "ws_a", user="carol")
+        spoof = {"endpoint_class": "secrets", "resource_id": "secrets-a",
+                 "user": "alice"}
+        self.assertEqual(self.authz(hash_c, "ws_a", "carol", spoof), FORBIDDEN)
+
+    def test_principalless_token_denied_on_owned_resource(self):
+        # a token with no resolved user (deny-by-default) may not touch a
+        # user-scoped resource even in its own workspace
+        self.assertEqual(
+            self.authz(self.hash_a, "ws_a", None,
+                       {"endpoint_class": "secrets",
+                        "resource_id": "secrets-a"}), FORBIDDEN)
 
 
 class TestTokenDiscipline(unittest.TestCase):
@@ -351,8 +367,8 @@ class NoLockQuotaGate(QuotaGate):
 
 
 class ProbeLeakAuthorize(Authorize):
-    def __call__(self, token_hash, workspace_of_token, request):
-        decision = super().__call__(token_hash, workspace_of_token, request)
+    def __call__(self, token_hash, workspace_of_token, user_of_token, request):
+        decision = super().__call__(token_hash, workspace_of_token, user_of_token, request)
         if decision.status == 404:  # the leak: distinct cross-workspace answer
             return Decision(False, 403, "forbidden")
         return decision
@@ -430,9 +446,9 @@ class MutationGuards(unittest.TestCase):
         _, hash_a, _ = ab_tokens()
         request = {"endpoint_class": "file", "resource_id": "file-b",
                    "user": "alice"}
-        self.assertEqual(authz(hash_a, "ws_a", request).status, 404)
+        self.assertEqual(authz(hash_a, "ws_a", "alice", request).status, 404)
         broken = ProbeLeakAuthorize(dict(authz.resources))
-        self.assertEqual(broken(hash_a, "ws_a", request).status, 403)
+        self.assertEqual(broken(hash_a, "ws_a", "alice", request).status, 403)
 
     def test_guard_non_consuming_breaks_replay_probe(self):
         real = TerminalTicketPolicy(clock=Clock(), ttl_s=60.0)

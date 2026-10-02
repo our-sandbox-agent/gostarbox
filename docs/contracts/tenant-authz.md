@@ -52,7 +52,10 @@ revoked token looks up to nothing). Unknown `endpoint_class` is a caller bug
   cross-tenant ids all answer the same).
 - **403** for cross-user actions on user-scoped resources *inside one
   workspace* (shared endpoints): existence is already visible to the tenant,
-  so the mask would protect nothing — the action is simply denied.
+  so the mask would protect nothing — the action is simply denied. The acting
+  principal is resolved **only from the verified token record**
+  (`user_of_token`); a `user` field inside the request body is never trusted,
+  and a token with no resolved user is denied by default on owned resources.
 - A workspace-scoped (ownerless) resource in one's own workspace stays
   allowed for every workspace member.
 

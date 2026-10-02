@@ -128,7 +128,7 @@ class Authorize:
     def register_resource(self, resource_id, workspace, owner=None):
         self.resources[resource_id] = {"workspace": workspace, "owner": owner}
 
-    def __call__(self, token_hash, workspace_of_token, request):
+    def __call__(self, token_hash, workspace_of_token, user_of_token, request):
         endpoint = request.get("endpoint_class")
         if endpoint not in ENDPOINT_CLASSES:
             raise ValueError(f"unknown endpoint class: {endpoint!r}")
@@ -137,8 +137,10 @@ class Authorize:
         resource = self.resources.get(request.get("resource_id"))
         if resource is None or resource["workspace"] != workspace_of_token:
             return NOT_FOUND
-        owner, user = resource.get("owner"), request.get("user")
-        if owner is not None and user is not None and owner != user:
+        # The acting principal comes ONLY from the verified token record; a
+        # user field inside the request is never trusted for authorization.
+        owner = resource.get("owner")
+        if owner is not None and owner != user_of_token:
             return FORBIDDEN
         return ALLOW
 
@@ -166,6 +168,7 @@ class TerminalTicketPolicy:
         self._clock = clock
         self.ttl_s = ttl_s
         self._tickets = {}  # sha256(ticket_id) -> record; never the clear id
+        self._lock = threading.Lock()
 
     def issue(self, user, workspace, sandbox_id, generation):
         ticket_id = secrets.token_urlsafe(24)
@@ -180,20 +183,25 @@ class TerminalTicketPolicy:
         return ticket_id
 
     def redeem(self, ticket_id, user, workspace, sandbox_id, generation):
-        """Single-use bind-checked redemption; True on the one valid use."""
-        record = self._tickets.get(hash_token(ticket_id))
-        if record is None:
-            return False, "unknown_ticket"
-        if record["consumed"]:
-            return False, "replay"
-        if self._clock() - record["issued_at"] > self.ttl_s:
-            return False, "expired"
-        if (record["user"], record["workspace"], record["sandbox_id"],
-                record["generation"]) != (user, workspace, sandbox_id,
-                                          generation):
-            return False, "binding_mismatch"
-        record["consumed"] = True
-        return True, "ok"
+        """Single-use bind-checked redemption; True on the one valid use.
+
+        The whole check-then-commit runs under one lock so concurrent redeems
+        of the same ticket cannot both succeed (same discipline as QuotaGate).
+        """
+        with self._lock:
+            record = self._tickets.get(hash_token(ticket_id))
+            if record is None:
+                return False, "unknown_ticket"
+            if record["consumed"]:
+                return False, "replay"
+            if self._clock() - record["issued_at"] > self.ttl_s:
+                return False, "expired"
+            if (record["user"], record["workspace"], record["sandbox_id"],
+                    record["generation"]) != (user, workspace, sandbox_id,
+                                              generation):
+                return False, "binding_mismatch"
+            record["consumed"] = True
+            return True, "ok"
 
 
 # ------------------------------------------------------------------ quota gate
