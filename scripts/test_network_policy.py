@@ -125,6 +125,38 @@ class FixedDenyBatteryTests(unittest.TestCase):
             policy().decide("169.254.169.254", 443, res(PUB)),
             Decision(False, "metadata_denied"))
 
+    def test_ipv4_mapped_ipv6_cannot_bypass_deny_set(self):
+        # dual-stack sockets dial mapped v6 as plain v4, so the mapped form
+        # of a denied v4 address must hit the v4 rules
+        cases = [
+            ("::ffff:169.254.169.254", "metadata_denied"),
+            ("::ffff:10.0.0.1", "private_denied"),
+            ("2002:0a00:0001::", "private_denied"),      # 6to4 of 10.0.0.1
+        ]
+        for ip, reason in cases:
+            with self.subTest(ip=ip):
+                self.assertEqual(
+                    policy().decide("pypi.org", 443, res(ip)),
+                    Decision(False, reason))
+
+    def test_zero_and_nat64_ranges_denied(self):
+        for ip, reason in (("0.0.0.0", "loopback_denied"),
+                           ("64:ff9b::c000:0226", "nat64_denied"),
+                           ("64:ff9b:1::c000:0226", "nat64_denied"),
+                           ("224.0.0.1", "multicast_denied"),
+                           ("ff02::1", "multicast_denied"),
+                           ("240.0.0.1", "reserved_denied")):
+            with self.subTest(ip=ip):
+                self.assertEqual(
+                    policy().decide("pypi.org", 443, res(ip)),
+                    Decision(False, reason))
+
+    def test_failing_resolver_denies_without_raising(self):
+        def exploding(host):
+            raise OSError("dns down")
+        self.assertEqual(policy().decide("pypi.org", 443, exploding),
+                         Decision(False, "unresolved"))
+
 
 class ConfigDenyTests(unittest.TestCase):
     def test_control_plane_cidrs_denied(self):

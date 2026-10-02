@@ -59,7 +59,7 @@ import time
 import urllib.parse
 
 from byok_policy import UPSTREAM_HOST, upstream_rule
-from watchdog_lease import ISOLATION_ACTION, network_failure_policy
+from watchdog_lease import network_failure_policy
 
 # --------------------------------------------------------------- constants
 
@@ -78,6 +78,12 @@ FIXED_DENY_NETWORKS = (
     (ipaddress.ip_network("fc00::/7"), "private_denied"),        # ULA
     (ipaddress.ip_network("169.254.0.0/16"), "link_local_denied"),
     (ipaddress.ip_network("fe80::/10"), "link_local_denied"),
+    (ipaddress.ip_network("0.0.0.0/8"), "loopback_denied"),      # reaches localhost on Linux
+    (ipaddress.ip_network("64:ff9b::/96"), "nat64_denied"),      # embedded IPv4
+    (ipaddress.ip_network("64:ff9b:1::/48"), "nat64_denied"),    # local-use NAT64
+    (ipaddress.ip_network("224.0.0.0/4"), "multicast_denied"),
+    (ipaddress.ip_network("ff00::/8"), "multicast_denied"),
+    (ipaddress.ip_network("240.0.0.0/4"), "reserved_denied"),
 )
 
 # Management/infrastructure ports denied on ANY host, allowlist or not.
@@ -273,7 +279,9 @@ class EgressPolicy:
 
     def _resolve(self, host, resolver):
         """IP literals answer for themselves (no resolver consulted);
-        names ask the injected resolver (host -> [ips])."""
+        names ask the injected resolver (host -> [ips]). A failing resolver
+        yields NO addresses (unresolved → default deny), never an exception
+        out of decide()."""
         bare = host.strip("[]")
         try:
             ipaddress.ip_address(bare)
@@ -282,7 +290,10 @@ class EgressPolicy:
             pass
         if resolver is None:
             return []
-        return [str(ip) for ip in (resolver(host) or [])]
+        try:
+            return [str(ip) for ip in (resolver(host) or [])]
+        except Exception:
+            return []
 
     # ------------------------------------------------- mutation points
 
@@ -293,7 +304,17 @@ class EgressPolicy:
 
     def _deny_reason(self, ip):
         """Classification of ONE address against the fixed + config deny
-        set; None = deny-free. ip is a parsed ipaddress object."""
+        set; None = deny-free. ip is a parsed ipaddress object.
+        IPv4-mapped/6to4/Teredo IPv6 forms are unwrapped first — dual-stack
+        sockets dial them as plain IPv4, so ::ffff:169.254.169.254 must hit
+        the v4 metadata rule, not sail past a version-mismatched `in`."""
+        if ip.version == 6:
+            if ip.ipv4_mapped is not None:
+                ip = ip.ipv4_mapped
+            elif ip.sixtofour is not None:
+                ip = ip.sixtofour
+            elif ip.teredo is not None:
+                ip = ip.teredo[1]
         if any(ip == meta for meta in METADATA_ADDRESSES):
             return "metadata_denied"
         for network, reason in self._deny_networks:
