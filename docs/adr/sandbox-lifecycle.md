@@ -83,6 +83,8 @@ workspace 也可能含使用者自行寫入的秘密：排除常見檔名不能�
 
 cold Suspend 保留檔案不代表 key 也保存，Web 恢復尚無安全重送流程時引導使用 CLI，不偷偷落盤 key。代理注入屬後續完整 Alpha 能力；受限試用必須揭露 key 可被沙盒中的使用者／Agent 程序讀取。
 
+本保存矩陣的機器可驗版本見 [contracts/workspace-persistence.json](../contracts/workspace-persistence.json)，由 `scripts/verify_persistence_contract.py` 檢查內部一致性；語意仍以本 ADR 為準，不代表任何 volume／snapshot／runtime 已實作。
+
 ### 記憶體終止後重新建立執行實體（#67 提案）
 
 此路徑套用同一保存矩陣：保留 approved workspace/home volumes、session ID/cwd 及 metadata；不保留 RAM、程序、tmux/socket、rootfs 可寫層或 ephemeral credential。CLI 重新提供 key，不能靠 volume 偷存 key。已落盤不等於所有應用程式緩衝／部分寫入都安全；無法依賴 OOM 當下的 save hook。當前實測只涵蓋同一容器 docker start 與兩個 fsynced marker，重新建立實體仍需 #11（runtime）／#17（operation／對帳）／#19（自動策略）驗收。

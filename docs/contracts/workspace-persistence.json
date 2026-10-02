@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "title": "Workspace and home persistence contract (preservation matrix)",
+  "source_of_truth": [
+    "docs/adr/sandbox-lifecycle.md #4-#5 (Proposed, 2026-09-22)",
+    "docs/adr/memory-session-recovery.md (#67, Proposed, 2026-09-27)",
+    "docs/adr/usage-ledger.md #2 (Proposed, 2026-09-22)"
+  ],
+  "resources": {
+    "sandbox_runtime": {
+      "resource_id": "independent resource ID (instance ID + generation) per usage-ledger #2; runtime.started/stopped events meter it, and its lifecycle is not derived from volume state",
+      "aspects": ["ram", "processes", "tmux_socket", "rootfs_writable_layer", "ephemeral_credentials"]
+    },
+    "workspace_volume": {
+      "resource_id": "independent volume resource ID per usage-ledger #2; provisioned/resized/released events carry the full quantity vector; lifecycle NOT derived from sandbox observed_state",
+      "aspects": ["approved_workspace_files"]
+    },
+    "home_volume": {
+      "resource_id": "independent volume resource ID per usage-ledger #2, separate from the workspace volume; only approved (allowlisted) home data is persisted, never all of home",
+      "aspects": ["claude_conversations", "approved_home_settings", "session_id_cwd_record"]
+    },
+    "snapshot": {
+      "resource_id": "independent snapshot ID per usage-ledger #2; owned by snapshot.created/expired/deleted events with its own retention, independent of the sandbox runtime",
+      "aspects": ["snapshot_data"]
+    }
+  },
+  "events": [
+    {
+      "id": "cold_suspend",
+      "trigger": "POST /v1/sandboxes/{id}/state {state: Suspend, suspend_mode: cold}; observed Suspend only after Runner-confirmed process stop",
+      "preserves": ["workspace_volume", "home_volume", "snapshot"],
+      "drops": ["sandbox_runtime"],
+      "details": {
+        "sandbox_runtime": "processes stopped; RAM, PIDs, sockets and the original tmux screen are not kept; runtime tmpfs credentials cleared (key re-sent by CLI on resume, else 409 credentials_required); the compute metering interval closes only at the confirmed stop (runtime.stopped), never at HTTP 202",
+        "workspace_volume": "approved workspace volume retained; volume_provisioned storage metering keeps running while the volume exists",
+        "home_volume": "approved home volume retained, including the recorded Claude session ID and cwd",
+        "snapshot": "independent resource; suspend does not touch the snapshot lifecycle"
+      },
+      "guarded_by": [
+        "#12 acceptance: after cold Suspend/Resume, container recreation and runner restart, marker, repo and required agent settings exist",
+        "#12 (2026-10-02 inventory): volume retention still meters usage (#77 cross-check)",
+        "lifecycle contract: Suspending->Suspend requires Runner-confirmed stop; credentials_required refusal keeps the sandbox in Suspend"
+      ]
+    },
+    {
+      "id": "resume",
+      "trigger": "resume from Suspend via Resuming: valid credentials, capacity admission (volume_bytes) and disk checks pass; new generation and fencing token allocated",
+      "preserves": ["workspace_volume", "home_volume", "snapshot"],
+      "drops": ["sandbox_runtime"],
+      "details": {
+        "sandbox_runtime": "a NEW execution instance starts with a new generation; no RAM, processes, tmux/socket or rootfs writable layer carry-over; ephemeral credentials are not preserved, the CLI re-sends the key",
+        "workspace_volume": "the same volume is re-attached; no re-clone and no overwrite of an existing repo (docs/contracts/work-image.md idempotent init)",
+        "home_volume": "the same volume is re-attached; the session ID/cwd record survives; a missing record reports session_missing instead of silently loading another conversation",
+        "snapshot": "independent resource; unaffected by resume"
+      },
+      "guarded_by": [
+        "#12 acceptance: cold Suspend/Resume keeps marker, repo and required agent settings; secrets are never written into copyable work files",
+        "work-image contract: a non-empty workspace skips clone and is never overwritten (scripts/clone_args.py should_skip_clone)"
+      ]
+    },
+    {
+      "id": "destroy",
+      "trigger": "DELETE /v1/sandboxes/{id} with explicit data-deletion scope confirmation and expected_version; Destroying -> Destroyed after one-by-one confirmed removal",
+      "preserves": ["snapshot"],
+      "drops": ["sandbox_runtime", "workspace_volume", "home_volume"],
+      "details": {
+        "sandbox_runtime": "processes confirmed terminated; session secret injection revoked and cleared",
+        "workspace_volume": "the first-version workspace volume is removed only after the explicit data-deletion scope confirmation; existing backups follow their own retention-based deletion flow",
+        "home_volume": "the home volume and session index are deleted",
+        "snapshot": "destroy does NOT imply snapshot deletion: snapshots are independent resources with their own created/expired/deleted events and retention; snapshot ledger rows stay alive until their own confirmed deletion"
+      },
+      "guarded_by": [
+        "#12 acceptance: destroy/expiry recycling distinguishes compute deletion from data deletion; retention/trash rules are consistent with a human-confirmed data-deletion boundary",
+        "usage-ledger #2: sandbox destroy must not assume backups or snapshots are already deleted"
+      ]
+    },
+    {
+      "id": "memory_termination_recreation",
+      "trigger": "memory_limit_terminated confirmed (container actually stopped, exit 137, OOMKilled=true, current generation); after reconcile, explicit restart -> Resuming -> Active with a new generation",
+      "preserves": ["workspace_volume", "home_volume", "snapshot"],
+      "drops": ["sandbox_runtime"],
+      "details": {
+        "sandbox_runtime": "the old instance is gone: RAM, processes, tmux/socket, rootfs writable layer and ephemeral credentials are not preserved; a fresh execution instance is created with a new generation (recreation, not a same-container docker start); a bounded exec health check is required before Active",
+        "workspace_volume": "the approved workspace volume is kept across stop/restart; volume identity is saved in control-plane metadata before launch; committed/fsynced files are preserved, application-buffer and partial-write loss is accepted",
+        "home_volume": "the approved home volume is kept; the recorded session ID and cwd are preserved; session-ID reconnection stays unverified until paid E05/E10",
+        "snapshot": "independent resource; unaffected by recreation"
+      },
+      "guarded_by": [
+        "#12 (2026-10-02 inventory): recreation must show recreation/session-ID evidence, not pass off a same-container docker start as recreation",
+        "#67 ADR: same approved volumes across stop/restart; credentials are protected separately from approved persisted data and never key-stashed in a volume",
+        "#11 runtime recreation and #17 operation/reconcile acceptance remain pending"
+      ]
+    },
+    {
+      "id": "volume_resize",
+      "trigger": "volume quantity change passes admission (volume_bytes) and is confirmed; emitted as resource.resized with the full new quantity vector",
+      "preserves": ["sandbox_runtime", "workspace_volume", "home_volume", "snapshot"],
+      "drops": [],
+      "details": {
+        "sandbox_runtime": "unaffected; compute metering continues unchanged",
+        "workspace_volume": "data preserved; only the provisioned quantity changes; resize follows the volume's own resource lifecycle and is not derived from sandbox observed_state",
+        "home_volume": "same semantics as the workspace volume when resized",
+        "snapshot": "unaffected"
+      },
+      "guarded_by": [
+        "#12 acceptance: permissions and usage caps are verifiable (volume_bytes admission on create/resume)",
+        "usage-ledger #2: volume resize cannot be derived from sandbox state alone; policy.applied/resource.resized events carry the full quantity vector"
+      ]
+    },
+    {
+      "id": "snapshot_ttl_expiry",
+      "trigger": "snapshot TTL reached; expiry issues a delete request only; the confirmed deletion ends snapshot_stored metering",
+      "preserves": ["sandbox_runtime", "workspace_volume", "home_volume"],
+      "drops": ["snapshot"],
+      "details": {
+        "sandbox_runtime": "unaffected by snapshot expiry",
+        "workspace_volume": "unaffected by snapshot expiry",
+        "home_volume": "unaffected by snapshot expiry",
+        "snapshot": "TTL expiry issues a delete request only; metering ends on confirmed deletion; both the retention deadline and the actual release time are recorded"
+      },
+      "guarded_by": [
+        "usage-ledger #2 + ledger-examples.json snapshot case: TTL 2s expiry with 3s confirmed deletion meters 6,144,000 byte*ms (deadline and release both recorded)"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "id": "volume_lifecycle_independent_from_sandbox_state",
+      "statement": "workspace/home volumes and snapshots have independent resource IDs; provision/resize/release follow their own resource events and are never derived from sandbox observed_state (usage-ledger #2)."
+    },
+    {
+      "id": "destroy_does_not_imply_snapshot_deletion",
+      "statement": "sandbox destroy removes the first-version workspace/home volumes but never assumes backup or snapshot deletion; snapshot rows stay alive until their own confirmed deletion."
+    },
+    {
+      "id": "retention_deadline_and_release_both_recorded",
+      "statement": "snapshot TTL expiry records the retention deadline and only requests deletion; the actual release is recorded separately and ends storage metering on confirmed deletion, not on request acceptance."
+    },
+    {
+      "id": "suspend_keeps_storage_meters_running",
+      "statement": "cold suspend stops compute metering only at the Runner-confirmed stop; volume_provisioned and snapshot_stored meters keep running while the storage exists."
+    },
+    {
+      "id": "credentials_never_persisted_in_volumes",
+      "statement": "the API key lives in runtime tmpfs only and is cleared on stop; it never enters DB, log, image, volume or backup; resume without the key stays Suspend with 409 credentials_required."
+    }
+  ],
+  "cold_restart": {
+    "no_reclone_no_overwrite": "an existing non-empty workspace skips clone and is never overwritten; an empty workspace clones via argv-safe git clone -- <url> <dest>; contract: docs/contracts/work-image.md (scripts/clone_args.py)",
+    "session_id_stable": "the recorded Claude session ID survives suspend/resume and execution-instance recreation; recreation evidence must show a new instance with a new generation, not a same-container docker start",
+    "cwd_preserved": "the recorded working directory is preserved across cold restart; resume uses the explicit session/cwd record",
+    "missing_session_reported": "a missing session record reports session_missing so the user chooses a new session; another conversation is never silently loaded",
+    "init_runs_once": "first-boot initialization (fixed tmux session name, node-owned /workspace) runs exactly once across first boot, reboot and cold recovery (work-image idempotent contract)"
+  }
+}
