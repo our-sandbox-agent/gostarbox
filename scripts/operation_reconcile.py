@@ -660,7 +660,11 @@ class Reconciler:
         unknown = []
         for iid, inst in observed.items():
             sid = inst.get("sandbox_id")
-            if sid in desired:
+            rec = desired.get(sid)
+            # Only the CURRENT-generation instance is evidence for a record;
+            # stale/rogue or duplicate-generation claims route to isolation —
+            # a recreated cgroup's zeroed counters are not evidence.
+            if rec is not None and inst.get("generation") == rec.get("generation"):
                 by_sandbox.setdefault(sid, inst)
             else:
                 unknown.append((iid, inst))

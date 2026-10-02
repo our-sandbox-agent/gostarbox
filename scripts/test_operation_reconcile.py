@@ -260,6 +260,24 @@ class ReconcilerRules(unittest.TestCase):
         self.assertEqual(flags[0]["reason"], "unknown_instance")
         self.assertEqual(flags[0]["resolution"], "human_decision")
 
+    def test_stale_generation_instance_isolated_not_evidence(self):
+        # an old-generation instance claiming a live sandbox_id must NOT count
+        # as evidence: its stop report cannot self-grant reconciled or unlock
+        # a recreation while the current generation still owns the record
+        log = seeded_log()
+        run_to_completion(log, RuntimeDouble(), "sbx1", "suspend")
+        actions = Reconciler(log).diff(
+            log.sandboxes(),
+            {"inst-old": {"sandbox_id": "sbx1", "state": "Error",
+                          "generation": 0, "stop_evidence": True}})
+        self.assertEqual(actions[0]["action"], "isolate_unknown_instance")
+        self.assertFalse(actions[0]["auto_adopt"])
+        Reconciler(log).apply(actions)
+        sb = log.sandbox("sbx1")
+        self.assertFalse(sb["reconciled"])  # no self-granted verdict
+        self.assertEqual(len(log.flags()), 1)
+        self.assertEqual(log.flags()[0]["reason"], "unknown_instance")
+
     def test_lost_without_stop_evidence_keeps_reservation_uncertain(self):
         log = seeded_log()
         run_to_completion(log, RuntimeDouble(), "sbx1", "suspend")
