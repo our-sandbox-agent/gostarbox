@@ -92,7 +92,7 @@ class RejectsBrokenContracts(unittest.TestCase):
         def edit(doc):
             find_event(doc, "memory_termination_recreation")["details"]["home_volume"] = \
                 "the approved home volume is kept"
-        self.assertTrue(any("session ID/cwd" in m for m in mutated(edit)))
+        self.assertTrue(any("session ID and cwd" in m for m in mutated(edit)))
 
     def test_required_invariant_removed_rejected(self):
         def edit(doc):
