@@ -23,6 +23,7 @@
 | [m0-matrix-index.md](m0-matrix-index.md) | #8 矩陣→來源／版本／hash／清理／成本索引（僅簿記既有證據，not_run 與 FAIL 保留） |
 | [r01-warm-restore-protocol.md](r01-warm-restore-protocol.md) | R01（#31）暖恢復比較協定：先驗官方 Docker checkpoint、raw runsc 對照；規劃中，**未執行** |
 | [r02-warm-suspend-protocol.md](r02-warm-suspend-protocol.md) | R02（#32）暖 Suspend 一致記憶體與磁碟版本協定：僅當 R01 go 才執行；規劃中，**未執行** |
+| [r03-snapshot-fork-protocol.md](r03-snapshot-fork-protocol.md) | R03（#33）磁碟 Snapshot／Fork 與憑證處理協定：disk 快照先行、memory 快照列依 R02；規劃中，**未執行** |
 | [evidence/](evidence/) | 遮蔽後的原始證據包（歷史紀錄，保留原狀） |
 
 E05／E10 的付費實測由 #75 追蹤；#75 完成只補執行證據，不自動完成 #8 的人工 GO。
