@@ -22,6 +22,9 @@ export function createTabSync({ storage, key, revision = 0, get, adopt }) {
   const take = state => { rev = state.revision; adopt(state.boxes); return true; };
   const refresh = () => { const s = stored(); return s && s.revision > rev ? take(s) : false; };
   const write = () => {
+    // ponytail: no CAS — two tabs passing refresh() at the same revision in the
+    // sub-ms before either setItem both write rev+1; add a tab-id tiebreak if
+    // that race ever matters beyond this demo.
     if (refresh()) return false;
     storage.setItem(key, JSON.stringify({ revision: rev + 1, boxes: get() }));
     rev += 1;

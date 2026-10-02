@@ -188,5 +188,5 @@ async function chooseOverwrite(mode) {
 }
 overwriteSkip.onclick = () => chooseOverwrite('skip');
 overwriteConfirm.onclick = () => chooseOverwrite('overwrite');
-window.addEventListener('pageshow',e=>{if(e.persisted){boxes.forEach(b=>restoreClock(b,Date.now()));render();}});
+window.addEventListener('pageshow',e=>{if(e.persisted){sync.refresh();boxes.forEach(b=>restoreClock(b,Date.now()));render();}});
 render();readFiles();
