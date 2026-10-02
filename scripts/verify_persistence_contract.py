@@ -19,6 +19,7 @@ REQUIRED_INVARIANTS = {
     "destroy_does_not_imply_snapshot_deletion",
     "retention_deadline_and_release_both_recorded",
     "suspend_keeps_storage_meters_running",
+    "credentials_never_persisted_in_volumes",
 }
 # Which resources each event must preserve / drop (ADR #5 preservation matrix,
 # usage-ledger #2, memory-session-recovery #67).
@@ -48,7 +49,13 @@ EVENT_RULES = {
         "must_drop": {"snapshot"},
     },
 }
-REQUIRED_COLD_RESTART = {"no_reclone_no_overwrite", "session_id_stable", "cwd_preserved"}
+REQUIRED_COLD_RESTART = {
+    "no_reclone_no_overwrite",
+    "session_id_stable",
+    "cwd_preserved",
+    "missing_session_reported",
+    "init_runs_once",
+}
 
 
 def check_contract(doc):
@@ -151,9 +158,9 @@ def check_contract(doc):
         if isinstance(event, dict) and event.get("id") == "memory_termination_recreation" \
                 and isinstance(event.get("details"), dict):
             home = event["details"].get("home_volume", "")
-            if "session" not in home:
+            if "session" not in home or "cwd" not in home:
                 bad("event 'memory_termination_recreation': home_volume detail must state "
-                    "the recorded session ID/cwd is preserved")
+                    "the recorded session ID and cwd are preserved")
 
     invariants = doc["invariants"]
     if not isinstance(invariants, list) or not invariants:
