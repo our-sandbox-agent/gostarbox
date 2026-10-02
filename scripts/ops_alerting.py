@@ -257,7 +257,7 @@ class BackupPolicy:
         pass validate_drill_record. Secret exclusions come from the #21
         byok backup_plan (plaintext AND sealed blobs never travel with a
         backup); ledger totals must match the pre-restore
-        resource_events.summar() projection.
+        resource_events.summarize() projection.
         """
         return {
             "report_type": "restore-drill",
@@ -465,7 +465,9 @@ class AlertRules:
     guard tests (scripts/test_ops_alerting.py), not extension points.
     """
 
-    RULE_IDS = frozenset(RUNBOOKS)
+    RULE_IDS = frozenset((RULE_UPTIME, RULE_LEASE_EXPIRING, RULE_LEASE_EXPIRED,
+                          RULE_CAPACITY, RULE_BACKUP, RULE_CLEANUP,
+                          RULE_WATCHDOG))
 
     DEFAULTS = {
         "uptime_consecutive_failures": 3,   # N consecutive probe failures
