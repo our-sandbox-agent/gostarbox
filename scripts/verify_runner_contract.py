@@ -143,6 +143,11 @@ def check_contract(doc):
     if not any(t.get("from") == "Resuming" and t.get("to") == "Error"
                and "recovery_retry_exhausted" in t.get("error_codes", []) for t in transitions):
         bad("error code recovery_retry_exhausted from ADR #67 is missing on Resuming->Error")
+    for t in transitions:
+        if "recovery_retry_exhausted" in t.get("error_codes", []) \
+                and (t["from"], t["to"]) != ("Resuming", "Error"):
+            bad("error code recovery_retry_exhausted is only valid on Resuming->Error, "
+                f"found on {t['from']}->{t['to']}")
 
     # Refusals: explicit, closed-world, never create operations.
     seen_ids, seen_codes = set(), set()

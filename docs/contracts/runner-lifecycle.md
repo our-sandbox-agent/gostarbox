@@ -56,4 +56,4 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 
 Both are pure-stdlib and offline. The unittest file also contains guard tests that
 mutate the contract in-memory and assert the verifier rejects each broken rule
-(required by CONTRIBUTING).
+(in the spirit of CONTRIBUTING's test rule for pure-logic modules).
