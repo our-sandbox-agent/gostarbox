@@ -23,6 +23,31 @@ npm run dev -- --port 4173
 
 倒數和累計秒數會保存；重新整理接續剩餘時間，關頁期間暫停。手動 Set idle 後，從當下開始完整的 Idle → Suspend 倒數。頁面仍開著但背景計時器延遲時，恢復後會把時間分配到各狀態。正常離頁會立即保存；瀏覽器異常終止時，最多可能遺失最後一次定期保存後約 5 秒的前景進度（背景計時器遭節流時可能更久）。
 
+## 本地開發
+
+Demo（模擬模式）同[啟動](#啟動)：`npm run dev -- --port 4173`，開 http://localhost:4173/gostarbox/ 。
+
+控制平面 server（真實 API 模式的後端，`server/`）：
+
+```sh
+cd server
+npm ci
+SANDBOX_TOKEN=<自選隨機通行碼> npm start   # http://127.0.0.1:8787
+```
+
+`SANDBOX_TOKEN` 是所有端點共用的唯一 Bearer token，僅供本機開發，不會寫進 server 日誌，也不要提交進 repo。server 只繫結 loopback（127.0.0.1），對外需透過 SSH tunnel，契約見 [docs/contracts/control-plane-api.md](docs/contracts/control-plane-api.md)。
+
+測試（三層都在本機可跑）：
+
+```sh
+npm test && npm run build                          # demo 狀態計時與檔案測試、建置
+python3 -m unittest discover -s scripts -p 'test_*.py'   # Python 契約套件（可執行規格）
+cd server && npm run typecheck && npm test        # server 型別檢查與 node:test 契約測試
+bash scripts/ci-server-smoke.sh                   # 起 server 跑 create→list→destroy HTTP 契約煙霧測試
+```
+
+真實模式邊界：瀏覽器 UI 尚未接上真實 API（#15 未完成）；前端 client 已依 [docs/contracts/console-datasource.md](docs/contracts/console-datasource.md) 實作。`scripts/ci-server-smoke.sh` 只驗證 HTTP 契約層；demo 頁面的實際渲染由 `scripts/ci-smoke.sh` 以模擬模式驗證。
+
 ## 可體驗流程
 
 - Claude / Codex / Harness 快速啟動、新增自訂名稱與規格的沙盒。
