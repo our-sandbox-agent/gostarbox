@@ -27,7 +27,7 @@ trap 'kill -- "-$SERVER_PID" 2>/dev/null || true' EXIT
 # health-wait: any HTTP response (401 without a token counts) means listening
 UP=0
 for _ in $(seq 1 30); do
-  if curl -s -o /dev/null "$BASE/v1/sandboxes"; then UP=1; break; fi
+  if curl -s --max-time 2 -o /dev/null "$BASE/v1/sandboxes"; then UP=1; break; fi
   sleep 1
 done
 if [ "$UP" -ne 1 ]; then

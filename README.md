@@ -35,7 +35,7 @@ npm ci
 SANDBOX_TOKEN=<自選隨機通行碼> npm start   # http://127.0.0.1:8787
 ```
 
-`SANDBOX_TOKEN` 是所有端點共用的唯一 Bearer token，僅供本機開發，不會寫進 server 日誌，也不要提交進 repo。server 只繫結 loopback（127.0.0.1），對外需透過 SSH tunnel，契約見 [docs/contracts/control-plane-api.md](docs/contracts/control-plane-api.md)。
+`SANDBOX_TOKEN` 是所有端點共用的唯一 Bearer token，僅供本機開發，不會寫進 server 日誌，也不要提交進 repo。server 只繫結 loopback（127.0.0.1)；埠號預設 8787，可用 `PORT=<埠號>` 覆寫。對外需透過 SSH tunnel，契約見 [docs/contracts/control-plane-api.md](docs/contracts/control-plane-api.md)。
 
 測試（三層都在本機可跑）：
 
