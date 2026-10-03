@@ -24,3 +24,14 @@ jobs:
       - run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Render smoke (headless Chrome against vite preview)
         run: bash scripts/ci-smoke.sh /gostarbox/
+      # plain npm ci without cache config: setup-node's npm cache hashes the
+      # root lockfile only; a server-specific cache-dependency-path is not
+      # worth it for this dependency footprint
+      - name: Server typecheck and tests
+        working-directory: server
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+      - name: Server contract smoke (live HTTP, in-memory adapter)
+        run: bash scripts/ci-server-smoke.sh
