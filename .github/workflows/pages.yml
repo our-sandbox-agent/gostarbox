@@ -29,6 +29,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Render smoke (headless Chrome against vite preview)
+        run: bash scripts/ci-smoke.sh /gostarbox/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
