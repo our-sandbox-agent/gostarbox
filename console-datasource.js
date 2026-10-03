@@ -1,9 +1,8 @@
 // Data source layer between the console UI and wherever sandbox state lives.
 // Demo mode keeps today's localStorage behavior exactly — same keys, same
 // wrapper format, tab-sync revision guard — so there is zero data migration.
-// Real mode lands with #76 (control-plane contract) and is deliberately NOT
-// implemented here: its factory throws instead of ever mocking a successful
-// API (issue #14 2026-10-02 note).
+// Real mode is the async control-plane client of docs/contracts/
+// control-plane-api.json (served by server/, issue #123 = #76 package 1).
 import { readState, createTabSync } from './tab-sync.js';
 
 export const MODE_DEMO = 'demo';
@@ -31,6 +30,78 @@ export function createDemoDatasource({ storage }) {
   };
 }
 
-export function createApiDatasource() {
-  throw new Error('real API datasource pending #76 control-plane contract implementation');
+// Real mode is server-authoritative (issue #15 2026-10-02 note: the
+// localStorage timing/revision machinery must not be reused), so this is an
+// async client with the contract's own shape — NOT a mock of the demo
+// interface. It has no read()/createSync()/readPolicy()/writePolicy(): no
+// localStorage writes, no tab sync, no local timing. src.js stays demo-only
+// until the #15 runtime wiring consumes this surface.
+export class ApiError extends Error {
+  constructor(status, code, message, options) {
+    super(message, options);
+    this.name = 'ApiError';
+    this.status = status; // null when no HTTP answer was received
+    this.code = code; // contract error code, or 'unreachable'
+  }
+}
+
+// pollOperation timeout: carries the last observed operation state. A timeout
+// is NOT a failure verdict (contract: unknown outcome resolves via lease
+// expiry/reconciliation, never an assumption).
+export class PollTimeoutError extends Error {
+  constructor(operation) {
+    super(`operation ${operation?.operation_id} still ${operation?.state} after timeout (timeout is not a failure verdict)`);
+    this.name = 'PollTimeoutError';
+    this.code = 'poll_timeout';
+    this.operation = operation;
+  }
+}
+
+export function createApiDatasource({ apiBase, token, fetchImpl = fetch }) {
+  if (!apiBase) throw new Error('createApiDatasource requires apiBase (real mode is explicit, never accidental)');
+  if (!token) throw new Error('createApiDatasource requires token (bearer on every endpoint)');
+  const base = String(apiBase).replace(/\/+$/, '');
+
+  async function request(path, { method = 'GET', body, idempotencyKey } = {}) {
+    const headers = { Authorization: `Bearer ${token}` }; // token is sent, never logged
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    if (idempotencyKey !== undefined) headers['Idempotency-Key'] = idempotencyKey;
+    let res;
+    try {
+      res = await fetchImpl(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    } catch (cause) {
+      throw new ApiError(null, 'unreachable', 'control plane unreachable', { cause });
+    }
+    let parsed = null;
+    try { parsed = await res.json(); } catch { /* non-JSON body: fall through */ }
+    if (!res.ok) {
+      throw new ApiError(res.status, parsed?.error?.code ?? 'invalid_response', parsed?.error?.message ?? `HTTP ${res.status}`);
+    }
+    return parsed;
+  }
+
+  function mutating(path, method, body, opts) {
+    return request(path, { method, body, idempotencyKey: opts?.idempotencyKey ?? crypto.randomUUID() });
+  }
+
+  async function pollOperation(id, { timeoutMs = 30000, intervalMs = 500 } = {}) {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+      const operation = await request('/v1/operations/' + encodeURIComponent(id));
+      if (operation.state === 'succeeded' || operation.state === 'failed') return operation;
+      if (Date.now() >= deadline) throw new PollTimeoutError(operation);
+      await new Promise(resolve => setTimeout(resolve, Math.max(0, Math.min(intervalMs, deadline - Date.now()))));
+    }
+  }
+
+  return {
+    mode: MODE_REAL,
+    list: () => request('/v1/sandboxes'),
+    get: id => request('/v1/sandboxes/' + encodeURIComponent(id)),
+    create: (body, opts) => mutating('/v1/sandboxes', 'POST', body, opts),
+    requestState: (id, body, opts) => mutating('/v1/sandboxes/' + encodeURIComponent(id) + '/state', 'POST', body, opts),
+    destroy: (id, body, opts) => mutating('/v1/sandboxes/' + encodeURIComponent(id), 'DELETE', body, opts),
+    getOperation: id => request('/v1/operations/' + encodeURIComponent(id)),
+    pollOperation
+  };
 }
