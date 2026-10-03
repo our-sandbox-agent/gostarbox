@@ -24,7 +24,7 @@ const CONFIRM_SCOPE = 'workspace_and_home_volumes'
 // Acceptance-driven intermediate states: entering these is triggered by
 // operation acceptance per the runner contract ("requires: operation accepted");
 // every other transition is applied only by confirm() (Runner evidence).
-const INTERMEDIATE_STATES = new Set(['Suspending', 'Resuming', 'Destroying'])
+const INTERMEDIATE_STATES = new Set(['Creating', 'Suspending', 'Resuming', 'Destroying'])
 // ponytail: capacity is derived from observed_state, not an accounting ledger —
 // Suspend releases compute only at the confirmed stop, Destroyed at confirmed removal
 const COMPUTE_HELD_STATES = new Set([
