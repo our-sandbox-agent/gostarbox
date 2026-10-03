@@ -22,3 +22,5 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Render smoke (headless Chrome against vite preview)
+        run: bash scripts/ci-smoke.sh /gostarbox/
