@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "title": "Reconnectable single-terminal protocol message contract",
+  "status": "Proposed",
+  "source_of_truth": [
+    "docs/adr/sandbox-lifecycle.md (Proposed, 2026-09-22): section 1 detach semantics, section 3 unified entry and state gate",
+    "docs/adr/runner-language.md (Accepted, 2026-09-21): CLI goes through the control plane, never the Runner directly",
+    "issue #13: acceptance criteria and the 2026-10-02 scoping note (contract may proceed in parallel to #76; closes only with runtime integration)"
+  ],
+  "open_decisions": [
+    {
+      "id": "backend-ttyd-vs-own-pty",
+      "status": "OPEN",
+      "question": "serve the terminal via ttyd in front of tmux, or own the PTY/WebSocket bridge",
+      "resolution_home": "runtime integration under #13; decision criteria listed in docs/contracts/terminal-protocol.md",
+      "contract_independence": "either backend speaks the same JSON frames defined here; the backend choice must not leak into the frame table"
+    }
+  ],
+  "transport": {
+    "binding": "JSON text frames over a single WebSocket connection per terminal attachment",
+    "entry": "the unified console.<domain> entry per ADR sandbox-lifecycle.md section 3; the CLI never calls the Runner directly",
+    "transport_agnostic": true,
+    "backend": "ttyd or an owned PTY bridge is the OPEN decision in open_decisions; the frames are identical either way",
+    "bounds": "max frame size and max input/output data byte size, like the server buffer size, are set at runtime integration under #13; rate_limited deferral follows the same runtime bounds"
+  },
+  "common_fields": {
+    "seq": "integer, per-direction monotonic counter on the connection; gaps on the server side are allowed after output drops",
+    "ts": "integer, Unix epoch milliseconds on the sender clock",
+    "applies_to": "every frame defined in frames"
+  },
+  "frames": [
+    {
+      "name": "hello",
+      "direction": "client_to_server",
+      "purpose": "authenticate and attach to one sandbox terminal",
+      "required_fields": ["token", "sandbox_id", "requested_size"],
+      "optional_fields": ["generation"],
+      "field_notes": {
+        "token": "control-plane session token from #12; never the Claude API key; must not appear in logs",
+        "sandbox_id": "the sandbox to attach to",
+        "requested_size": {"cols": "1..500", "rows": "1..500"},
+        "generation": "generation the client last saw from GET /v1/sandboxes/{id}; omitted when unknown"
+      }
+    },
+    {
+      "name": "hello_ack",
+      "direction": "server_to_client",
+      "purpose": "confirm the attach and state the live identity and applied size",
+      "required_fields": ["generation", "cols", "rows"],
+      "optional_fields": ["replay_follows"],
+      "field_notes": {
+        "generation": "the generation this connection is bound to; every later frame on the connection is fenced by it",
+        "cols": "size actually applied to the tmux session under last_resize_wins",
+        "rows": "size actually applied to the tmux session under last_resize_wins",
+        "replay_follows": "when true, the next output frame has origin replay with the captured current screen"
+      }
+    },
+    {
+      "name": "hello_err",
+      "direction": "server_to_client",
+      "purpose": "reject the attach and close",
+      "required_fields": ["code", "message"],
+      "optional_fields": [],
+      "field_notes": {
+        "code": "one of the closed error_codes set valid at hello time",
+        "message": "human-readable, safe for logs, no secrets"
+      }
+    },
+    {
+      "name": "input",
+      "direction": "client_to_server",
+      "purpose": "send user keystrokes to the PTY",
+      "required_fields": ["data"],
+      "optional_fields": [],
+      "field_notes": {
+        "data": "UTF-8 text; control keys ride as raw bytes (Ctrl-C is the byte 0x03); the server never interprets, filters, or translates them"
+      }
+    },
+    {
+      "name": "output",
+      "direction": "server_to_client",
+      "purpose": "stream terminal output to the client",
+      "required_fields": ["data"],
+      "optional_fields": ["origin", "code"],
+      "field_notes": {
+        "data": "UTF-8 stream text with ANSI escape sequences passed through unmodified",
+        "origin": "live (default) or replay (current-screen capture sent after attach or resync)",
+        "code": "only output_limit_exceeded: the drop-to-sync notice; data is empty when code is set"
+      }
+    },
+    {
+      "name": "resize",
+      "direction": "client_to_server",
+      "purpose": "change the terminal size",
+      "required_fields": ["cols", "rows"],
+      "optional_fields": [],
+      "field_notes": {
+        "cols": "integer 1..500; outside the bounds is invalid_frame",
+        "rows": "integer 1..500; outside the bounds is invalid_frame"
+      }
+    },
+    {
+      "name": "resized",
+      "direction": "server_to_client",
+      "purpose": "tell every attached window the size that was actually applied",
+      "required_fields": ["cols", "rows", "source"],
+      "optional_fields": [],
+      "field_notes": {
+        "cols": "applied columns",
+        "rows": "applied rows",
+        "source": "self, peer, or server: which side caused the applied size"
+      }
+    },
+    {
+      "name": "ping",
+      "direction": "client_to_server",
+      "purpose": "liveness and RTT probe",
+      "required_fields": [],
+      "optional_fields": [],
+      "field_notes": {
+        "note": "counted as liveness, never as user activity"
+      }
+    },
+    {
+      "name": "pong",
+      "direction": "server_to_client",
+      "purpose": "answer a ping",
+      "required_fields": ["ping_seq"],
+      "optional_fields": [],
+      "field_notes": {
+        "ping_seq": "seq of the answered ping"
+      }
+    },
+    {
+      "name": "bye",
+      "direction": "both",
+      "purpose": "clean end of the attachment",
+      "required_fields": ["reason"],
+      "optional_fields": ["code"],
+      "field_notes": {
+        "reason": "client_detach, server_shutdown, sandbox_stopping, or sandbox_destroyed",
+        "code": "error_codes entry when the end is an error condition, else absent"
+      }
+    }
+  ],
+  "error_codes": [
+    {
+      "code": "auth_failed",
+      "carrier": "hello_err",
+      "fatal": true,
+      "client_action": "obtain a fresh control-plane token and reconnect"
+    },
+    {
+      "code": "sandbox_not_found",
+      "carrier": "hello_err",
+      "fatal": true,
+      "client_action": "unknown, destroyed, or another tenant's sandbox; no retry against the same id"
+    },
+    {
+      "code": "sandbox_not_active",
+      "carrier": "hello_err",
+      "fatal": true,
+      "client_action": "request Active via POST /v1/sandboxes/{id}/state and attach after the operation succeeds"
+    },
+    {
+      "code": "wrong_generation",
+      "carrier": "hello_err",
+      "fatal": true,
+      "client_action": "execution instance was recreated; re-read GET /v1/sandboxes/{id} and attach fresh to the current generation"
+    },
+    {
+      "code": "backpressure_overflow",
+      "carrier": "bye.code",
+      "fatal": true,
+      "client_action": "dropped output exceeded the recovery cap while in drop_to_sync; reconnect is allowed and the screen is restored from capture"
+    },
+    {
+      "code": "output_limit_exceeded",
+      "carrier": "output.code",
+      "fatal": false,
+      "client_action": "drop-to-sync notice: queued output was discarded; any client frame exits the mode and triggers a capture replay"
+    },
+    {
+      "code": "invalid_frame",
+      "carrier": "hello_err or bye.code",
+      "fatal": true,
+      "client_action": "schema violation such as an unknown type, bad fields, or resize outside bounds; fix the client"
+    },
+    {
+      "code": "rate_limited",
+      "carrier": "bye.code",
+      "fatal": true,
+      "client_action": "frame rate above the per-connection limit; reconnect with backoff"
+    }
+  ],
+  "semantics": {
+    "reconnect": {
+      "screen_replay": "on a successful attach the server sends output frames with origin replay holding a tmux capture of the current visible screen, then live output",
+      "no_content_buffer": "there is no server-side terminal content buffer in any form; replay is always a fresh capture of what is on the screen now",
+      "cold_resume": "after cold suspend and resume the processes are new; the replay shows the new session screen, not the old one (ADR sandbox-lifecycle.md section 1)"
+    },
+    "size_policy": {
+      "status": "Proposed: explicit two-window decision tracked by #13",
+      "bounds": {
+        "cols": {"min": 1, "max": 500},
+        "rows": {"min": 1, "max": 500}
+      },
+      "multi_window": {
+        "policy": "last_resize_wins",
+        "behavior": [
+          "each accepted resize frame is applied to the tmux session as the new size",
+          "every attached connection receives a resized notification with the applied cols and rows",
+          "an older window does not veto a newer resize; its local rendering adapts on the notification"
+        ],
+        "notification_frame": "resized"
+      }
+    },
+    "input_passthrough": {
+      "statement": "input data is UTF-8 text; control keys ride as raw bytes (Ctrl-C is the byte 0x03) and the server never interprets, filters, or translates them; the PTY/tmux session turns bytes into signals",
+      "ctrl_c": "the server must not synthesize SIGINT on its own; Ctrl-C reaches the program only as the byte the client sent"
+    },
+    "output_passthrough": {
+      "statement": "output data is UTF-8 stream text; ANSI escape sequences pass through unmodified; the server never parses, filters, or alters output",
+      "storage": "terminal content is forwarded and discarded; only numeric frame and byte counters survive (activity_classification.counters)"
+    }
+  },
+  "activity_classification": {
+    "purpose": "the idle policy in #19 and ops dashboards in #23 must tell real user activity apart from liveness, layout, and server traffic",
+    "classes": {
+      "user_input": {"frames": ["input"], "counts_as_user_activity": true},
+      "liveness": {"frames": ["ping", "pong"], "counts_as_user_activity": false},
+      "layout": {"frames": ["resize", "resized"], "counts_as_user_activity": false},
+      "server_stream": {"frames": ["output"], "counts_as_user_activity": false},
+      "session_control": {"frames": ["hello", "hello_ack", "hello_err", "bye"], "counts_as_user_activity": false}
+    },
+    "counters": {
+      "user_input_frames": "per sandbox, incremented once per input frame",
+      "user_input_bytes": "per sandbox, sum of bytes in input frame data",
+      "output_frames": "per sandbox, incremented once per output frame; separate from the input counters",
+      "output_bytes": "per sandbox, sum of bytes in output frame data; a number only, never content"
+    }
+  },
+  "lifecycle_binding": {
+    "binding": "a connection is bound to sandbox_id + generation at hello time; hello is the first client frame, and any other frame arriving before hello_ack is answered with bye code invalid_frame; every frame after hello_ack is fenced by that identity",
+    "on_stop_or_destroy": {
+      "rule": "when the sandbox moves to Suspending or Destroying the server sends bye and only then closes the WebSocket; bye is always the final server frame",
+      "reasons": ["sandbox_stopping", "sandbox_destroyed"]
+    },
+    "detach": {
+      "statement": "a client bye or a dropped WebSocket never kills the tmux session or its processes; only the attachment goes away"
+    },
+    "reconnect_after_destroy": {
+      "code": "sandbox_not_found",
+      "note": "destroyed, unknown, and cross-tenant ids all answer with the same code; no probe signal"
+    },
+    "wrong_generation_guard": {
+      "code": "wrong_generation",
+      "client_action": "re-read GET /v1/sandboxes/{id} and attach fresh to the current generation; the fresh attach replays the new screen"
+    },
+    "not_active": {
+      "code": "sandbox_not_active",
+      "note": "any observed_state outside Active and Idle, including Suspend, answers at hello; the client asks for Active through the state endpoint and attaches after the operation succeeds (ADR sandbox-lifecycle.md section 3)"
+    }
+  },
+  "backpressure": {
+    "buffer": {
+      "scope": "per-connection server-side output queue",
+      "bounded": true,
+      "size_bytes": "set at runtime integration under #13; must be finite and explicit, never unbounded"
+    },
+    "on_overflow": {
+      "mode": "drop_to_sync",
+      "actions": [
+        "enter drop_to_sync mode",
+        "discard every queued output frame; count the discarded span in dropped_bytes (numeric counter only, content is not kept)",
+        "send exactly one output frame with code output_limit_exceeded and empty data",
+        "keep counting newly produced output in dropped_bytes while the mode is active"
+      ]
+    },
+    "exit_drop_to_sync": "the first client frame after the notice (input, resize, or ping) proves the client is alive; the server sends one output frame with origin replay holding a tmux capture of the current visible screen and resumes live forwarding",
+    "fatal_cap": {
+      "condition": "dropped_bytes exceeds the per-connection recovery cap",
+      "action": "server sends bye with code backpressure_overflow, then closes; reconnect is allowed"
+    }
+  },
+  "related_tickets": [
+    {"ticket": 13, "role": "owner: protocol acceptance checkboxes and runtime integration"},
+    {"ticket": 76, "role": "parallel API/terminal ticket boundary; this contract proceeds independently"},
+    {"ticket": 19, "role": "idle policy consumes the user_input activity class"},
+    {"ticket": 23, "role": "ops consumes the activity classes and byte counters"},
+    {"ticket": 12, "role": "control-plane API and session token fields used at hello"},
+    {"ticket": 14, "role": "CLI client of this contract"},
+    {"ticket": 15, "role": "browser client of this contract"},
+    {"ticket": 10, "role": "sandbox work image prerequisite"},
+    {"ticket": 11, "role": "runner prerequisite"}
+  ]
+}

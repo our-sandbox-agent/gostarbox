@@ -20,6 +20,16 @@
 | [gvisor-guest-pid-results-20260927.md](gvisor-guest-pid-results-20260927.md) | guest NPROC 部分緩解；E09 仍阻塞 |
 | [gvisor-m0-pid-results-20260927.md](gvisor-m0-pid-results-20260927.md) | #70 修正判定與證據（#71 候選來源） |
 | [gvisor-m0-memory-results-20260927.md](gvisor-m0-memory-results-20260927.md) | #67 記憶體壓力與恢復證據（#72 來源） |
+| [m0-matrix-index.md](m0-matrix-index.md) | #8 矩陣→來源／版本／hash／清理／成本索引（僅簿記既有證據，not_run 與 FAIL 保留） |
+| [r01-warm-restore-protocol.md](r01-warm-restore-protocol.md) | R01（#31）暖恢復比較協定：先驗官方 Docker checkpoint、raw runsc 對照；規劃中，**未執行** |
+| [r02-warm-suspend-protocol.md](r02-warm-suspend-protocol.md) | R02（#32）暖 Suspend 一致記憶體與磁碟版本協定：僅當 R01 go 才執行；規劃中，**未執行** |
+| [r03-snapshot-fork-protocol.md](r03-snapshot-fork-protocol.md) | R03（#33）磁碟 Snapshot／Fork 與憑證處理協定：disk 快照先行、memory 快照列依 R02；規劃中，**未執行** |
+| [r04-resume-upload-protocol.md](r04-resume-upload-protocol.md) | R04（#34）500 MB 續傳與資料夾可靠匯入協定：tus 授權綁 workspace/upload id、斷點續接與 Caddy 代理實測；規劃中，**未執行** |
+| [r05-git-autosave-protocol.md](r05-git-autosave-protocol.md) | R05（#35）選用的 Suspend 前 Git 自動存檔協定：repo-scoped 憑證鐵門、HEAD/index 不變與 force-with-lease 語意、停機不被 push 卡住；規劃中，**未執行** |
+| [r06-firecracker-eval-protocol.md](r06-firecracker-eval-protocol.md) | R06（#36）Firecracker 需求／主機／成本門檻評估協定：條件式開工（仍未授權切換 runtime）、KVM 硬條件檢查、cold restart／warm restore cold-cache／warm-cache 分列、價格當日查證；規劃中，**未執行** |
+| [r07-firecracker-runner-protocol.md](r07-firecracker-runner-protocol.md) | R07（#37）Firecracker 基礎 Runner 與冷恢復協定：僅當 R06 go 與基礎設施授權才開工（epic，先拆五組 sub-issues）、jail/tap/netns 可復原、同一 contract suite、digest 固定；規劃中，**未執行** |
+| [r08-firecracker-memory-protocol.md](r08-firecracker-memory-protocol.md) | R08（#38）Firecracker 記憶體恢復與安全驗收協定：僅當 R07 go 才開工（先拆 snapshot 一致性、resume hooks、bench/upgrade 三組 sub-issues）、vmstate+mem+volume 成套、時間／亂數／憑證／網路／應用狀態逐項驗、memory fork 未過則禁用；規劃中，**未執行** |
+| [t04-ide-mode-protocol.md](t04-ide-mode-protocol.md) | T04（#52）Web IDE 模式 spike 協定：條件式開工（#8 人工 GO＋真 Runner＋冷 Suspend 驗證；可選／暫緩，非受限試用必要）、競品／授權／上游舊快照開工前重查、E06 已實測不得再當未驗阻礙、`/s/<id>/ide/` 代理與 CSP、Idle `excluded_processes` 排除介面、`/proxy/<port>` 關閉與 Open VSX 供應鏈對策、記憶體壓力退出範圍量測（不預先承諾優先殺 IDE）；規劃中，**未執行** |
 | [evidence/](evidence/) | 遮蔽後的原始證據包（歷史紀錄，保留原狀） |
 
 E05／E10 的付費實測由 #75 追蹤；#75 完成只補執行證據，不自動完成 #8 的人工 GO。

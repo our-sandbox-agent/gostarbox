@@ -1,0 +1,605 @@
+{
+  "schema_version": 1,
+  "title": "Runner sandbox lifecycle transition contract",
+  "source_of_truth": [
+    "docs/adr/sandbox-lifecycle.md (Proposed, 2026-09-22)",
+    "docs/adr/memory-session-recovery.md (#67, Proposed, 2026-09-27)"
+  ],
+  "initial_state": "Creating",
+  "states": {
+    "Creating": {
+      "terminal": false,
+      "entry": "create accepted, capacity reserved"
+    },
+    "Active": {
+      "terminal": false,
+      "entry": "processes ready, Active resource policy applied"
+    },
+    "Idle": {
+      "terminal": false,
+      "entry": "processes alive, Idle resource policy applied"
+    },
+    "Suspending": {
+      "terminal": false,
+      "entry": "process stop in progress"
+    },
+    "Suspend": {
+      "terminal": false,
+      "entry": "Runner-confirmed process stop, data volumes still exist"
+    },
+    "Resuming": {
+      "terminal": false,
+      "entry": "credentials, capacity and disk checks passed, start in progress"
+    },
+    "Destroying": {
+      "terminal": false,
+      "entry": "delete accepted, verifying process and data resources one by one"
+    },
+    "Destroyed": {
+      "terminal": true,
+      "entry": "processes, first-version volumes and session secret confirmed removed"
+    },
+    "Lost": {
+      "terminal": false,
+      "entry": "Runner lease expired, actual process state unknown"
+    },
+    "Error": {
+      "terminal": false,
+      "entry": "known operation failure, not Lost"
+    }
+  },
+  "transitions": [
+    {
+      "from": "Creating",
+      "to": "Active",
+      "trigger": "create",
+      "requires": [
+        "create operation accepted with capacity admission passed (milliCPU, memory bytes, volume bytes)",
+        "process readiness confirmed by Runner evidence",
+        "Active resource policy applied"
+      ],
+      "side_effects": [
+        "emit runtime.started with instance ID and initial generation",
+        "open compute metering interval (cpu_reserved, memory_reserved)",
+        "emit policy.applied"
+      ]
+    },
+    {
+      "from": "Creating",
+      "to": "Error",
+      "trigger": "create",
+      "requires": [
+        "known create failure confirmed by Runner evidence (half-created sandbox)",
+        "failure is known, not unknown; unknown outcome goes to Lost via lease expiry"
+      ],
+      "side_effects": [
+        "clean up partially created resources",
+        "record error code and last_confirmed_state",
+        "list residual resources; capacity released only after confirmed release"
+      ]
+    },
+    {
+      "from": "Creating",
+      "to": "Destroying",
+      "trigger": "destroy",
+      "requires": [
+        "destroy/cancel accepted while create is not yet confirmed",
+        "reservation not returned early; Destroying takes over before any release"
+      ],
+      "side_effects": [
+        "verify and remove partially created process and data resources"
+      ]
+    },
+    {
+      "from": "Active",
+      "to": "Idle",
+      "trigger": "set_idle",
+      "requires": [
+        "Idle state operation accepted (Idempotency-Key, expected_version)",
+        "Idle policy switch confirmed by Runner evidence; pending operation shown until confirmed"
+      ],
+      "side_effects": [
+        "emit policy.applied with the full new resource vector",
+        "compute metering continues under Idle policy; CPU reported as configured, never 0 while reserved"
+      ]
+    },
+    {
+      "from": "Active",
+      "to": "Suspending",
+      "trigger": "suspend",
+      "requires": [
+        "cold suspend operation accepted (suspend_mode=cold)",
+        "no blocking activity: subtasks, background work, permission wait or unidentifiable activity",
+        "expected_version matches; at most one change operation per sandbox"
+      ],
+      "side_effects": [
+        "begin stopping processes",
+        "record suspend reason (user request or runtime_limit deadline)"
+      ]
+    },
+    {
+      "from": "Active",
+      "to": "Error",
+      "trigger": "memory_termination_confirmed",
+      "requires": [
+        "container confirmed stopped with exit 137 and OOMKilled=true",
+        "observation correlated to the current generation; a recreated cgroup's zeroed counters are not evidence",
+        "a live sandbox with one OOM-killed child does not qualify"
+      ],
+      "error_codes": ["memory_limit_terminated"],
+      "side_effects": [
+        "emit durable control-plane event with reason, generation and recovery state",
+        "approved workspace/home volumes retained; further exec frozen and attribution preserved before any restart",
+        "record error code and last_confirmed_state",
+        "list residual resources; capacity released only after confirmed release"
+      ]
+    },
+    {
+      "from": "Active",
+      "to": "Destroying",
+      "trigger": "destroy",
+      "requires": [
+        "destroy accepted with explicit data-deletion scope confirmation and expected_version"
+      ],
+      "side_effects": [
+        "stop processes and verify removal of process and data resources one by one"
+      ]
+    },
+    {
+      "from": "Idle",
+      "to": "Active",
+      "trigger": "set_active",
+      "requires": [
+        "Active state operation accepted",
+        "switch confirmed by Runner evidence (CPU demand, task start or input observed)"
+      ],
+      "side_effects": [
+        "emit policy.applied with the full new resource vector"
+      ]
+    },
+    {
+      "from": "Idle",
+      "to": "Suspending",
+      "trigger": "suspend",
+      "requires": [
+        "cold suspend operation accepted (suspend_mode=cold)",
+        "no blocking activity: subtasks, background work, permission wait or unidentifiable activity",
+        "expected_version matches; at most one change operation per sandbox"
+      ],
+      "side_effects": [
+        "begin stopping processes",
+        "record suspend reason (user request or runtime_limit deadline)"
+      ]
+    },
+    {
+      "from": "Idle",
+      "to": "Error",
+      "trigger": "memory_termination_confirmed",
+      "requires": [
+        "container confirmed stopped with exit 137 and OOMKilled=true",
+        "observation correlated to the current generation; a recreated cgroup's zeroed counters are not evidence",
+        "a live sandbox with one OOM-killed child does not qualify"
+      ],
+      "error_codes": ["memory_limit_terminated"],
+      "side_effects": [
+        "emit durable control-plane event with reason, generation and recovery state",
+        "approved workspace/home volumes retained; further exec frozen and attribution preserved before any restart",
+        "record error code and last_confirmed_state",
+        "list residual resources; capacity released only after confirmed release"
+      ]
+    },
+    {
+      "from": "Idle",
+      "to": "Destroying",
+      "trigger": "destroy",
+      "requires": [
+        "destroy accepted with explicit data-deletion scope confirmation and expected_version"
+      ],
+      "side_effects": [
+        "stop processes and verify removal of process and data resources one by one"
+      ]
+    },
+    {
+      "from": "Suspending",
+      "to": "Suspend",
+      "trigger": "suspend",
+      "requires": [
+        "Runner-confirmed observation that all processes stopped (HTTP 202 is not confirmation)"
+      ],
+      "side_effects": [
+        "close the compute metering interval only at confirmed stop (runtime.stopped)",
+        "retain workspace and approved home volumes",
+        "clear runtime tmpfs credentials; key is re-sent by CLI on resume (credentials_required if absent)"
+      ]
+    },
+    {
+      "from": "Suspending",
+      "to": "Error",
+      "trigger": "suspend",
+      "requires": [
+        "suspend operation failed with a known error"
+      ],
+      "side_effects": [
+        "record error code and last_confirmed_state",
+        "list residual resources; capacity released only after confirmed release"
+      ]
+    },
+    {
+      "from": "Suspend",
+      "to": "Resuming",
+      "trigger": "resume",
+      "requires": [
+        "valid credentials presented (else 409 credentials_required: no operation, stays Suspend)",
+        "capacity admission passes (milliCPU, memory bytes, volume bytes)",
+        "disk and volume checks pass",
+        "expected_version matches; no conflicting operation"
+      ],
+      "side_effects": [
+        "create one operation",
+        "allocate a new generation and a monotonically increasing fencing token"
+      ]
+    },
+    {
+      "from": "Suspend",
+      "to": "Destroying",
+      "trigger": "destroy",
+      "requires": [
+        "destroy accepted with explicit data-deletion scope confirmation and expected_version"
+      ],
+      "side_effects": [
+        "verify removal of processes and the retained data volumes"
+      ]
+    },
+    {
+      "from": "Resuming",
+      "to": "Active",
+      "trigger": "resume",
+      "requires": [
+        "new instance health check confirmed (bounded exec)",
+        "processes ready and Active policy applied"
+      ],
+      "side_effects": [
+        "emit runtime.started for the new generation",
+        "open compute metering interval",
+        "reject late old-generation events; they cannot overwrite the new state"
+      ]
+    },
+    {
+      "from": "Resuming",
+      "to": "Error",
+      "trigger": "resume",
+      "requires": [
+        "resume or restart attempt failed (bounded retry policy: one per 60 seconds, three per 10 minutes)"
+      ],
+      "error_codes": ["recovery_retry_exhausted"],
+      "side_effects": [
+        "remain visibly failed; never shown as a normal reconnect; no automatic workload replay",
+        "approved volumes retained",
+        "record error code and last_confirmed_state",
+        "list residual resources; capacity released only after confirmed release"
+      ]
+    },
+    {
+      "from": "Destroying",
+      "to": "Destroyed",
+      "trigger": "destroy",
+      "requires": [
+        "processes, first-version volumes and session secret confirmed removed"
+      ],
+      "side_effects": [
+        "release capacity only after confirmed removal",
+        "keep the minimal tombstone and audit records",
+        "close compute and volume metering intervals with confirmed end times"
+      ]
+    },
+    {
+      "from": "Destroying",
+      "to": "Error",
+      "trigger": "destroy",
+      "requires": [
+        "destroy operation failed with a known error"
+      ],
+      "side_effects": [
+        "record error code and last_confirmed_state",
+        "list residual resources; capacity released only after confirmed release"
+      ]
+    },
+    {
+      "from": "Error",
+      "to": "Resuming",
+      "trigger": "resume",
+      "requires": [
+        "reconciliation confirms the old execution instance is stopped/fenced",
+        "credentials present; capacity and volume checks pass",
+        "expected_version matches; restart rate limit respected (one per 60 seconds, three per 10 minutes)"
+      ],
+      "side_effects": [
+        "allocate a new generation and fencing token",
+        "recreate the execution instance with the same approved volumes; writable rootfs layer and ephemeral credentials are not preserved"
+      ]
+    },
+    {
+      "from": "Error",
+      "to": "Destroying",
+      "trigger": "destroy",
+      "requires": [
+        "reconciliation confirms the residual resources can be acted on"
+      ],
+      "side_effects": [
+        "remove the residual process and data resources recorded at Error entry"
+      ]
+    },
+    {
+      "from": "Lost",
+      "to": "Resuming",
+      "trigger": "resume",
+      "requires": [
+        "fencing completed and reconciliation confirms the old generation stopped",
+        "credentials, capacity and volume checks pass",
+        "expected_version matches"
+      ],
+      "side_effects": [
+        "allocate a new generation and fencing token",
+        "reconcile usage between the last trusted heartbeat and confirmed stop via correction events, never silently zero or full"
+      ]
+    },
+    {
+      "from": "Lost",
+      "to": "Destroying",
+      "trigger": "destroy",
+      "requires": [
+        "fencing completed and the actual resources reconciled"
+      ],
+      "side_effects": [
+        "verify and remove the actual process and data resources found by reconciliation"
+      ]
+    },
+    {
+      "from": "Creating",
+      "to": "Lost",
+      "trigger": "lease_expiry",
+      "requires": [
+        "Runner lease expired (last trusted heartbeat stale)",
+        "actual process state unknown"
+      ],
+      "side_effects": [
+        "keep the resource reservation; no capacity claim either way without evidence",
+        "host watchdog fences the old generation by lease",
+        "mark usage beyond the last trusted heartbeat uncertain, not billed as confirmed and not zero"
+      ]
+    },
+    {
+      "from": "Active",
+      "to": "Lost",
+      "trigger": "lease_expiry",
+      "requires": [
+        "Runner lease expired (last trusted heartbeat stale)",
+        "actual process state unknown"
+      ],
+      "side_effects": [
+        "keep the resource reservation; no capacity claim either way without evidence",
+        "host watchdog fences the old generation by lease",
+        "mark usage beyond the last trusted heartbeat uncertain, not billed as confirmed and not zero"
+      ]
+    },
+    {
+      "from": "Idle",
+      "to": "Lost",
+      "trigger": "lease_expiry",
+      "requires": [
+        "Runner lease expired (last trusted heartbeat stale)",
+        "actual process state unknown"
+      ],
+      "side_effects": [
+        "keep the resource reservation; no capacity claim either way without evidence",
+        "host watchdog fences the old generation by lease",
+        "mark usage beyond the last trusted heartbeat uncertain, not billed as confirmed and not zero"
+      ]
+    },
+    {
+      "from": "Suspending",
+      "to": "Lost",
+      "trigger": "lease_expiry",
+      "requires": [
+        "Runner lease expired (last trusted heartbeat stale)",
+        "actual process state unknown"
+      ],
+      "side_effects": [
+        "keep the resource reservation; no capacity claim either way without evidence",
+        "host watchdog fences the old generation by lease",
+        "mark usage beyond the last trusted heartbeat uncertain, not billed as confirmed and not zero"
+      ]
+    },
+    {
+      "from": "Suspend",
+      "to": "Lost",
+      "trigger": "lease_expiry",
+      "requires": [
+        "Runner lease expired (last trusted heartbeat stale)",
+        "actual process state unknown"
+      ],
+      "side_effects": [
+        "keep the resource reservation; no capacity claim either way without evidence",
+        "host watchdog fences the old generation by lease",
+        "mark usage beyond the last trusted heartbeat uncertain, not billed as confirmed and not zero"
+      ]
+    },
+    {
+      "from": "Resuming",
+      "to": "Lost",
+      "trigger": "lease_expiry",
+      "requires": [
+        "Runner lease expired (last trusted heartbeat stale)",
+        "actual process state unknown (resume timeout with unknown outcome is Lost, not Error)"
+      ],
+      "side_effects": [
+        "keep the resource reservation; no capacity claim either way without evidence",
+        "host watchdog fences the old generation by lease",
+        "mark usage beyond the last trusted heartbeat uncertain, not billed as confirmed and not zero"
+      ]
+    },
+    {
+      "from": "Destroying",
+      "to": "Lost",
+      "trigger": "lease_expiry",
+      "requires": [
+        "Runner lease expired (last trusted heartbeat stale)",
+        "actual process state unknown"
+      ],
+      "side_effects": [
+        "keep the resource reservation; no capacity claim either way without evidence",
+        "host watchdog fences the old generation by lease",
+        "mark usage beyond the last trusted heartbeat uncertain, not billed as confirmed and not zero"
+      ]
+    },
+    {
+      "from": "Error",
+      "to": "Lost",
+      "trigger": "lease_expiry",
+      "requires": [
+        "Runner lease expired (last trusted heartbeat stale)",
+        "actual process state unknown"
+      ],
+      "side_effects": [
+        "keep the resource reservation; no capacity claim either way without evidence",
+        "host watchdog fences the old generation by lease",
+        "mark usage beyond the last trusted heartbeat uncertain, not billed as confirmed and not zero"
+      ]
+    }
+  ],
+  "refusals": [
+    {
+      "id": "warm-suspend-mode",
+      "when": "state endpoint called with suspend_mode other than cold",
+      "http_status": 422,
+      "code": "unsupported_suspend_mode",
+      "creates_operation": false
+    },
+    {
+      "id": "capacity-exceeded",
+      "when": "create or resume requests more than the admission limits allow",
+      "http_status": 409,
+      "code": "capacity_exceeded",
+      "creates_operation": false
+    },
+    {
+      "id": "credentials-required",
+      "when": "resume from Suspend without valid credentials",
+      "http_status": 409,
+      "code": "credentials_required",
+      "creates_operation": false,
+      "notes": "no operation is created and observed_state stays Suspend"
+    },
+    {
+      "id": "version-or-operation-conflict",
+      "when": "expected_version mismatch or another change operation already pending",
+      "http_status": 409,
+      "code": null,
+      "creates_operation": false,
+      "notes": "error message tells the client to re-read state; never auto-overwrite"
+    },
+    {
+      "id": "idempotency-key-conflict",
+      "when": "same Idempotency-Key replayed with a different body",
+      "http_status": 409,
+      "code": null,
+      "creates_operation": false,
+      "notes": "same key and same body returns the original operation"
+    },
+    {
+      "id": "suspending-conflict",
+      "when": "opposite-state operation requested while Suspending (replay of the same operation is allowed)",
+      "http_status": 409,
+      "code": null,
+      "creates_operation": false
+    },
+    {
+      "id": "resuming-conflict",
+      "when": "any change other than query while Resuming",
+      "http_status": 409,
+      "code": null,
+      "creates_operation": false
+    },
+    {
+      "id": "error-before-reconcile",
+      "when": "state-changing action on Error before reconciliation confirms retryability",
+      "http_status": 409,
+      "code": null,
+      "creates_operation": false
+    },
+    {
+      "id": "lost-before-fencing",
+      "when": "state-changing action on Lost before fencing/reconciliation",
+      "http_status": 409,
+      "code": null,
+      "creates_operation": false
+    },
+    {
+      "id": "stale-generation",
+      "when": "state or event submission from a stale generation (fencing token)",
+      "http_status": null,
+      "code": null,
+      "creates_operation": false,
+      "notes": "runner/control-plane fencing rejection; late old-generation evidence only enters via verified reconciliation history"
+    },
+    {
+      "id": "create-validation",
+      "when": "create with agent other than claude, or invalid resource/repo/tenant fields",
+      "http_status": 422,
+      "code": null,
+      "creates_operation": false
+    },
+    {
+      "id": "unknown-operation",
+      "when": "operation type not defined for the current state",
+      "http_status": 409,
+      "code": null,
+      "creates_operation": false,
+      "notes": "refuse-on-unknown: never fall through to a transition or create an operation"
+    }
+  ],
+  "capacity_admission": {
+    "checked_on": ["create", "resume"],
+    "inputs": {
+      "milli_cpu": "requested cpu_reserved in milliCPU against available host capacity",
+      "memory_bytes": "requested memory_reserved in bytes against available host capacity",
+      "volume_bytes": "requested volume_provisioned in bytes (workspace plus approved home) against available capacity"
+    },
+    "on_exceeded": {
+      "http_status": 409,
+      "code": "capacity_exceeded",
+      "creates_operation": false,
+      "transition": null
+    }
+  },
+  "invariants": [
+    {
+      "id": "destroyed_is_terminal",
+      "statement": "No transition leaves Destroyed; repeating destroy returns the existing operation, it does not create a second one."
+    },
+    {
+      "id": "lost_keeps_reservation",
+      "statement": "Lost retains the resource reservation; capacity returns only with confirmed stop/removal evidence, never automatically on lease expiry."
+    },
+    {
+      "id": "lost_not_direct_destroyed",
+      "statement": "Lost never goes directly to Destroyed and never recreates the same sandbox directly (no double-start); fencing and reconciliation come first."
+    },
+    {
+      "id": "generation_fencing",
+      "statement": "Every execution-instance replacement or cold resume allocates a new generation and a monotonically increasing fencing token; stale generations cannot submit state or events, and old-generation hooks cannot stop new tasks."
+    },
+    {
+      "id": "observed_not_desired",
+      "statement": "observed_state changes only on Runner-confirmed evidence; HTTP 202 is acceptance, not success; desired_state alone changes nothing."
+    },
+    {
+      "id": "single_change_operation",
+      "statement": "At most one change operation per sandbox at a time; conflicting requests return 409."
+    },
+    {
+      "id": "capacity_release_requires_confirmation",
+      "statement": "Capacity and metering intervals close only on confirmed observation (runtime.stopped / resource.released), per the usage-ledger ADR; admission reservation and applied usage are recorded separately."
+    }
+  ]
+}

@@ -9,6 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # full history: the gvisor evidence tests run `git archive` against
+          # the pinned measurement commits (same requirement as
+          # gvisor-preflight.yml's fetch-depth: 0)
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -16,3 +21,4 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - run: python3 -m unittest discover -s scripts -p 'test_*.py'

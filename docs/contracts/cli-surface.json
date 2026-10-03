@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "title": "Minimal CLI surface contract",
+  "status": "Proposed",
+  "source_of_truth": [
+    "docs/adr/runner-language.md (Accepted, 2026-09-21): the CLI is Go and always goes through the control plane, never the Runner directly",
+    "issue #14: acceptance criteria and the 2026-10-02 note (cp interface/implementation carried by the #20 integration; API gaps answer explicit unsupported, never a mocked success; #76 native control-plane dependency)",
+    "docs/plan.md section 3/4: M1 minimal commands login, claude, ls, connect, suspend, exec and the download-only sandbox cp",
+    "scripts/clone_args.py validate_repo_url: the repo URL rule referenced by sandbox claude --repo"
+  ],
+  "binary": {
+    "name": "sandbox",
+    "language": "Go (docs/adr/runner-language.md, Accepted)",
+    "implementation_status": "not started: no Go toolchain in this repo slice and #12/#13 runtime pieces are pending; this contract fixes the argv surface, exit codes, token discipline and terminal-restoration contract only, with no runtime claims"
+  },
+  "control_plane": {
+    "rule": "every command talks to the control plane only; the CLI never talks to a Runner directly (#76, runner-language ADR)",
+    "direct_runner_flag_forbidden": "no flag may route any command directly to a Runner; a direct_runner flag violates this contract and the verifier rejects it"
+  },
+  "global_flags": [
+    {"flag": "--quiet", "effect": "suppress the telemetry summary line and other non-essential output"},
+    {"flag": "--help", "effect": "print usage and exit 0"},
+    {"flag": "--version", "effect": "print version and exit 0"}
+  ],
+  "commands": [
+    {
+      "name": "login",
+      "status": "minimal",
+      "usage": "sandbox login",
+      "purpose": "bootstrap the control-plane token: read the token from stdin (no echo) and store it in the token file",
+      "control_plane_only": true,
+      "exit_codes": [0, 64, 65, 69, 70],
+      "no_oauth": "no OAuth flow in this ticket (#14 本票不含); paste-a-token bootstrap only"
+    },
+    {
+      "name": "claude",
+      "status": "minimal",
+      "usage": "sandbox claude [--repo <https-url>]",
+      "purpose": "create a sandbox, clone the optional repo, and attach to a Claude terminal in one line",
+      "control_plane_only": true,
+      "exit_codes": [0, 64, 65, 68, 69, 70, 75, 76],
+      "repo_validation": "same rule as scripts/clone_args.py validate_repo_url: https scheme only, host present, no userinfo, no whitespace or control characters; a rejected --repo is a usage error (64)"
+    },
+    {
+      "name": "ls",
+      "status": "minimal",
+      "usage": "sandbox ls",
+      "purpose": "list the caller's sandboxes with id and state",
+      "control_plane_only": true,
+      "exit_codes": [0, 64, 68, 69, 70, 75]
+    },
+    {
+      "name": "connect",
+      "status": "minimal",
+      "usage": "sandbox connect <id>",
+      "purpose": "attach the local terminal to an existing sandbox terminal",
+      "control_plane_only": true,
+      "exit_codes": [0, 64, 65, 68, 69, 70, 75, 76]
+    },
+    {
+      "name": "suspend",
+      "status": "minimal",
+      "usage": "sandbox suspend <id>",
+      "purpose": "request a cold suspend of the sandbox via the control plane",
+      "control_plane_only": true,
+      "exit_codes": [0, 64, 65, 68, 69, 70, 75]
+    },
+    {
+      "name": "destroy",
+      "status": "minimal",
+      "usage": "sandbox destroy <id>",
+      "purpose": "explicitly destroy the sandbox and its files via the control plane",
+      "control_plane_only": true,
+      "exit_codes": [0, 64, 65, 68, 69, 70, 75]
+    },
+    {
+      "name": "exec",
+      "status": "minimal",
+      "usage": "sandbox exec <id> -- <argv...>",
+      "purpose": "run a command inside the sandbox and attach to its terminal",
+      "control_plane_only": true,
+      "exit_codes": [0, 64, 65, 68, 69, 70, 75, 76],
+      "literal_argv_rule": "everything after -- is literal argv to the sandbox: never shell-parsed, never string-concatenated into a shell command line; argv passthrough mirrors the clone_args.py discipline"
+    },
+    {
+      "name": "cp",
+      "status": "defined-interface",
+      "usage": "sandbox cp <id> <remote-path> <local-path>",
+      "purpose": "download a file from the sandbox (download-only in M1; no upload in this ticket)",
+      "control_plane_only": true,
+      "exit_codes": [0, 64, 65, 68, 69, 70, 75],
+      "implementation": "the interface and exit codes are fixed here; the implementation lands with the #20 integration PR, not standalone in #14",
+      "pre_implementation_behavior": "until #20 lands the command exits 64 with a message pointing at #20; it never fakes or mocks a successful download",
+      "depends_on": [20]
+    }
+  ],
+  "unsupported_commands": [
+    {
+      "name": "snapshot",
+      "exit_code": 64,
+      "message_template": "unsupported command: {command} (not in the M1 minimal CLI; see sandbox --help)"
+    },
+    {
+      "name": "fork",
+      "exit_code": 64,
+      "message_template": "unsupported command: {command} (not in the M1 minimal CLI; see sandbox --help)"
+    },
+    {
+      "name": "resume",
+      "exit_code": 64,
+      "message_template": "unsupported command: {command} (not in the M1 minimal CLI; resume is a control-plane state operation reached via connect after the state endpoint reports Active)"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "sysexits_name": null,
+      "meaning": "success; also the Ctrl-\\ detach exit: the attach ends and the sandbox keeps running"
+    },
+    {
+      "code": 64,
+      "sysexits_name": "EX_USAGE",
+      "meaning": "usage error, unknown command, or explicitly unsupported command"
+    },
+    {
+      "code": 65,
+      "sysexits_name": "EX_DATAERR",
+      "meaning": "data error: invalid input data or an unusable control-plane response such as an unknown sandbox id"
+    },
+    {
+      "code": 68,
+      "sysexits_name": null,
+      "meaning": "no token: the token file is missing or empty and SANDBOX_TOKEN is unset; run sandbox login"
+    },
+    {
+      "code": 69,
+      "sysexits_name": "EX_UNAVAILABLE",
+      "meaning": "cannot reach the control plane"
+    },
+    {
+      "code": 70,
+      "sysexits_name": "EX_SOFTWARE",
+      "meaning": "internal error (a bug); report it, do not retry blindly"
+    },
+    {
+      "code": 75,
+      "sysexits_name": "EX_TEMPFAIL",
+      "meaning": "temporary failure; retrying later may succeed"
+    },
+    {
+      "code": 76,
+      "sysexits_name": "EX_PROTOCOL",
+      "meaning": "terminal connection lost: auto-reconnect attempts exhausted after a network drop; the message names the sandbox id to reconnect with"
+    }
+  ],
+  "token": {
+    "storage": "single file, no other copies on disk",
+    "path": "$XDG_CONFIG_HOME/sandbox/token, default ~/.config/sandbox/token",
+    "file_mode": "0600",
+    "never_in_argv": true,
+    "never_in_logs": true,
+    "env_override": {
+      "name": "SANDBOX_TOKEN",
+      "purpose": "CI and scripts: take the token from the environment instead of the file"
+    },
+    "missing_token_exit": 68
+  },
+  "terminal": {
+    "raw_mode": "while attached the CLI puts the local terminal into raw mode",
+    "raw_mode_restored_on_exit_paths": [
+      "normal exit",
+      "Ctrl-\\ detach",
+      "SIGINT/SIGTERM",
+      "socket close",
+      "panic"
+    ],
+    "detach_key": "Ctrl-\\ (byte 0x1c)",
+    "detach_exit_code": 0,
+    "detach_semantics": "the attach ends with exit code 0 and the sandbox keeps running; nothing inside the sandbox is killed",
+    "network_drop": "on a network drop the CLI auto-reconnects with backoff; when the attempts are exhausted it exits 76 with a message naming the sandbox id",
+    "cold_recovery": "on attach after a cold suspend/resume the terminal answers wrong_generation or replays a new screen; the CLI prints an explicit NEW session notice and never presents the new session as the old one (#13)"
+  },
+  "telemetry": {
+    "fields": ["terminal_ready_ms", "clone_done_ms"],
+    "terminal_ready_ms": "elapsed from the create request to terminal ready",
+    "clone_done_ms": "elapsed from clone start to clone completion; recorded only when --repo is used",
+    "output": "recorded locally as one line on stdout; nothing is uploaded in this ticket",
+    "quiet": "--quiet suppresses the telemetry line",
+    "target_not_promise": "10 seconds is listed as the create-to-terminal-ready target, not a promise; clone time is outside our control and is never a hard commitment"
+  },
+  "install_artifacts": {
+    "release_requires": [
+      {"artifact": "version file", "required": true},
+      {"artifact": "checksum file (sha256 of each release binary)", "required": true}
+    ],
+    "platform_claims": "a platform is claimed supported only after real testing on it",
+    "platforms": [
+      {"platform": "darwin/arm64", "status": "planned-first", "tested": false},
+      {"platform": "all other platforms", "status": "untested", "tested": false,
+       "note": "require real testing before any support claim"}
+    ]
+  },
+  "api_gaps": "a missing control-plane capability answers with an explicit unsupported error, never a mocked success (issue #14 2026-10-02 note)",
+  "related_tickets": [
+    {"ticket": 14, "role": "owner: CLI acceptance checkboxes and the Go runtime implementation"},
+    {"ticket": 12, "role": "control-plane API and session token this CLI consumes"},
+    {"ticket": 13, "role": "terminal protocol this CLI attaches with (wrong_generation, replay, detach)"},
+    {"ticket": 20, "role": "file API integration that implements sandbox cp"},
+    {"ticket": 76, "role": "control-plane-only rule; the CLI never talks to a Runner directly"}
+  ]
+}

@@ -35,6 +35,8 @@ Error 必須保留 `last_confirmed_state`、錯誤代碼與資源清單；容量
 
 記憶體終止補充（#67 提案，未實作）：確認終止映射為 Error，`error.code=memory_limit_terminated`；重試耗盡仍是 Error，代碼 `recovery_retry_exhausted`，不新增 recovery-blocked 狀態。對帳確認舊實體停止、憑證／容量／volume 檢查通過後，使用既有 state endpoint 要求 Active，經 operation 進 Resuming，建立新 generation；健康確認後才進 Active，失敗回 Error、未知回 Lost。恢復責任對應：執行實體重建與健康檢查由 #11 Runner 驗收、operation／generation／fencing 與對帳由 #17 驗收、自動恢復策略屬 #19 的產品決策（預設仍為使用者明確重啟）。詳見 [記憶體恢復契約](memory-session-recovery.md)。
 
+本狀態表的機器可驗版本見 [contracts/runner-lifecycle.json](../contracts/runner-lifecycle.json)，由 `scripts/verify_runner_contract.py` 檢查內部一致性；語意仍以本 ADR 為準，不代表 Runner 已實作。
+
 ## 3. 統一 API
 
 公開入口同一 `console.<domain>`：靜態 console、`/v1` API 與 terminal WebSocket。Runner 僅走私網且驗證 service credential；CLI 不直接呼叫 Runner。GitHub Pages 仍為純模擬，沒有正式 key。
@@ -80,6 +82,8 @@ policy 欄位：`auto_idle_enabled`、`idle_after_seconds`、`auto_suspend_enabl
 workspace 也可能含使用者自行寫入的秘密：排除常見檔名不能保證沒有秘密。受限試用只備份使用者確認的資料範圍，說明限制；未通過備份／還原驗收不得承諾自動備份。備份加密、ACL、retention 數值由試用放行表確認，不由本 ADR 猜定。
 
 cold Suspend 保留檔案不代表 key 也保存，Web 恢復尚無安全重送流程時引導使用 CLI，不偷偷落盤 key。代理注入屬後續完整 Alpha 能力；受限試用必須揭露 key 可被沙盒中的使用者／Agent 程序讀取。
+
+本保存矩陣的機器可驗版本見 [contracts/workspace-persistence.json](../contracts/workspace-persistence.json)，由 `scripts/verify_persistence_contract.py` 檢查內部一致性；語意仍以本 ADR 為準，不代表任何 volume／snapshot／runtime 已實作。
 
 ### 記憶體終止後重新建立執行實體（#67 提案）
 
