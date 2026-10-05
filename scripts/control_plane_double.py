@@ -181,7 +181,14 @@ class ControlPlaneDouble:
                                 "expected_version mismatch; re-read the sandbox"))
         if (sb["desired_state"] == target and sb["observed_state"] == target
                 and sb["pending_operation"] is None):
-            return 200, {"sandbox": self._sandbox_view(sb)}
+            response = {"sandbox": self._sandbox_view(sb)}
+            self.idempotency[headers["idempotency-key"]] = {
+                "method": "POST", "path": f"/v1/sandboxes/{sb['sandbox_id']}/state",
+                "fingerprint": self._fingerprint(body), "status": 200,
+                "operation_id": None, "sandbox_id": sb["sandbox_id"],
+                "response": copy.deepcopy(response),
+            }
+            return 200, response
         pending = (self.operations.get(sb["pending_operation"])
                    if sb["pending_operation"] else None)
         if pending is not None:
@@ -210,11 +217,11 @@ class ControlPlaneDouble:
                     or sb["resources"]["memory_bytes"] > left["memory_bytes"]):
                 raise _Refused(_err(429, "capacity_exceeded",
                                     "admission rejected: insufficient host capacity"))
-        op = self._new_operation(sb, "set_state", trigger,
-                                 {"state": target, "suspend_mode": mode})
         intermediate = self._success_target(sb["observed_state"], trigger)
         if trigger == "resume":
             sb["generation"] += 1  # cold resume allocates a new generation
+        op = self._new_operation(sb, "set_state", trigger,
+                                 {"state": target, "suspend_mode": mode})
         if intermediate in INTERMEDIATE_STATES:
             sb["observed_state"] = intermediate
         sb["desired_state"] = target
@@ -255,6 +262,12 @@ class ControlPlaneDouble:
         if sb["observed_state"] in {"Error", "Lost"} and not sb["reconciled"]:
             raise _Refused(_err(409, "opposite_operation",
                                 "reconciliation/fencing must precede destroy"))
+        if sb["pending_operation"]:
+            old = self.operations[sb["pending_operation"]]
+            old["state"] = "failed"
+            old["error"] = {"code": "superseded_by_destroy",
+                            "message": "destroy superseded this operation"}
+            old["updated_at"] = self._tick()
         op = self._new_operation(sb, "destroy", "destroy",
                                  {"scope": CONFIRM_SCOPE})
         sb["observed_state"] = "Destroying"
@@ -291,6 +304,11 @@ class ControlPlaneDouble:
             return self._op_view(op)
         sb = self.sandboxes[op["sandbox_id"]]
         trigger = op["trigger"]
+        success = self._success_target(sb["observed_state"], trigger)
+        if (sb["pending_operation"] != operation_id
+                or op["generation"] != sb["generation"]
+                or success is None or success in INTERMEDIATE_STATES):
+            raise RuntimeError("stale operation evidence or invalid completion phase")
         if error is not None:
             if sb["observed_state"] not in self._error_capable:
                 raise RuntimeError(
@@ -521,6 +539,8 @@ class ControlPlaneDouble:
         }
 
     def _idempotent_replay(self, entry):
+        if entry["status"] == 200:
+            return 200, copy.deepcopy(entry["response"])
         op = self.operations[entry["operation_id"]]
         if entry["method"] == "POST" and entry["path"] == "/v1/sandboxes":
             body = {"sandbox_id": entry["sandbox_id"],

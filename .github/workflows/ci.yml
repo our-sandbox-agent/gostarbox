@@ -1,7 +1,7 @@
 name: Validate pull request
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop, 'feat/**']
 permissions:
   contents: read
 jobs:
@@ -21,6 +21,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - run: python3 -m compileall -q scripts diagnostics
       - run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Render smoke (headless Chrome against vite preview)
         run: bash scripts/ci-smoke.sh /gostarbox/

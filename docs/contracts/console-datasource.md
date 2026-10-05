@@ -80,7 +80,8 @@ participates in the comparison (contract rule; the client just forwards it).
 `failed` — a `failed` operation **resolves** (it is a completed verdict with
 `retryable: true`), it does not reject. On `timeoutMs` it rejects
 `PollTimeoutError {code: 'poll_timeout', operation}` carrying the last observed
-operation state: per the contract's runtime-honesty semantics a timeout is NOT
+operation state (null before the first response). The deadline bounds fetch,
+response-body reading and polling waits, and aborts in-flight HTTP. Per the contract's runtime-honesty semantics a timeout is NOT
 a failure verdict — the outcome stays unknown until lease expiry /
 reconciliation resolves it, never an assumption.
 
@@ -114,13 +115,21 @@ reconciliation resolves it, never an assumption.
 
 ## Running the control plane locally
 
-The client speaks the real service in `server/` — see `server/README.md`:
-`npm install && npm start` there serves `http://127.0.0.1:8787` (loopback only)
-with `SANDBOX_TOKEN` as the single bearer token; pass the same token into
-`createApiDatasource` (the token is sent in the Authorization header and never
-logged). Known boundary while #11 (runner) is open: HTTP 202 is acceptance
-only — `observed_state` moves solely on Runner evidence, so operations polled
-over plain HTTP stay `pending` and `pollOperation` times out honestly.
+Start `server/` with an explicit `SANDBOX_TOKEN` (see `server/README.md`),
+then start Vite with `npm run dev -- --port 4173` from the repository root.
+The dev server proxies `/v1` to `http://127.0.0.1:8787`; in a browser client use
+`createApiDatasource({apiBase: window.location.origin, token})`. Supply the token
+in memory; do not store it or put it in a URL. If the backend PORT changes,
+update the proxy target too. This proxy is development-only; Vite preview and
+GitHub Pages remain demo-only.
+
+Do not point a browser on port 4173 directly at port 8787: the service intentionally
+has no cross-origin CORS support. The same-origin proxy handles this without
+weakening bearer authentication. This describes client development, not a wired
+real-mode UI; `src.js` still uses demo mode.
+
+HTTP 202 is acceptance only. Without #11 Runner evidence operations remain
+pending, and polling ends with an honest timeout.
 
 ## What it does NOT cover (non-goals here)
 
