@@ -43,6 +43,7 @@ SANDBOX_TOKEN="$(openssl rand -hex 24)" npm start   # http://127.0.0.1:8787
 npm test && npm run build                          # demo 狀態計時與檔案測試、建置
 python3 -m unittest discover -s scripts -p 'test_*.py'   # Python 契約套件（可執行規格）
 npm --prefix server run typecheck && npm --prefix server test        # server 型別檢查與 node:test 契約測試
+(cd runner && go test ./... && go vet ./...)         # Go Runner 契約測試（目前不含 runtime）
 bash scripts/ci-server-smoke.sh                   # 起 server 跑 create→list→destroy HTTP 契約煙霧測試
 ```
 
