@@ -653,3 +653,100 @@ test('guard: no capacity accounting breaks the 429 probe', async () => {
   r = await req(broken, 'POST', '/v1/sandboxes', { body, key: 'b' })
   assert.notEqual(r.status, 429)
 })
+
+// #129 regressions: evidence ordering, identity and successful no-op replay.
+test('resume response, replay, poll and confirmation share the new generation', async () => {
+  const d = makeDouble(); const sid = await makeActive(d)
+  await suspendConfirmed(d, sid)
+  const body = { state: 'Active', expected_version: await versionOf(d, sid), credential: 'dummy' }
+  const r = await state(d, sid, body, 'resume')
+  const generation = (await view(d, sid)).generation
+  assert.equal(r.body.operation.generation, generation)
+  assert.equal((await state(d, sid, { ...body, credential: 'replacement' }, 'resume')).body.operation.generation, generation)
+  assert.equal((d.cp.pollOperation(r.body.operation.operation_id).body as any).generation, generation)
+  assert.equal(d.cp.confirm(r.body.operation.operation_id).result?.generation, generation)
+})
+
+test('destroy supersedes pending create/idle and late success or error cannot change it', async () => {
+  for (const creating of [true, false]) for (const error of [undefined, { code: 'late_error' }]) {
+    const d = makeDouble(); const c = await create(d); const sid = c.body.sandbox_id
+    let old = c.body.operation.operation_id
+    if (!creating) {
+      d.cp.confirm(old)
+      old = (await state(d, sid, { state: 'Idle', expected_version: await versionOf(d, sid) }, 'idle')).body.operation.operation_id
+    }
+    const r = await destroy(d, sid, await versionOf(d, sid), 'destroy')
+    assert.equal(r.status, 202)
+    const before = d.cp.snapshot()
+    assert.equal(d.cp.confirm(old, error).state, 'failed')
+    assert.deepEqual(d.cp.snapshot(), before)
+    assert.equal(d.cp.confirm(r.body.operation.operation_id).result?.observed_state, 'Destroyed')
+    assert.equal((await view(d, sid)).observed_state, 'Destroyed')
+  }
+})
+
+test('confirmation rejects stale generation, wrong operation and wrong completion phase without writes', async () => {
+  for (const change of ['generation', 'operation', 'phase']) {
+    const d = makeDouble(); const c = await create(d); const sid = c.body.sandbox_id
+    const snapshot = d.cp.snapshot()
+    if (change === 'generation') snapshot.sandboxes[sid].generation++
+    if (change === 'operation') snapshot.sandboxes[sid].pending_operation = null
+    if (change === 'phase') snapshot.sandboxes[sid].observed_state = 'Lost'
+    d.cp.restore(snapshot)
+    for (const error of [undefined, {code: 'late_error'}]) {
+      const before = d.cp.snapshot()
+      assert.throws(() => d.cp.confirm(c.body.operation.operation_id, error))
+      assert.deepEqual(d.cp.snapshot(), before)
+    }
+  }
+})
+
+test('200 no-op reserves its idempotency key and replays after state changes and restart', async () => {
+  const d = makeDouble(); const sid = await makeActive(d)
+  const body = { state: 'Active', expected_version: await versionOf(d, sid) }
+  const first = await state(d, sid, body, 'noop')
+  assert.equal(first.status, 200)
+  assert.equal((await state(d, sid, { ...body, state: 'Suspend' }, 'noop')).body.error.code, 'body_conflict')
+  await suspendConfirmed(d, sid)
+  const restored = makeDouble(); restored.cp.restore(d.cp.snapshot())
+  assert.deepEqual(await state(restored, sid, body, 'noop'), first)
+})
+
+test('authenticated schema refusals do not allocate operations or mutate state', async () => {
+  const d = makeDouble(); const sid = await makeActive(d)
+  const cases: [string, string, unknown][] = [
+    ['DELETE', `/v1/sandboxes/${sid}`, { expected_version: await versionOf(d, sid), confirm_scope: 'wrong' }],
+    ['POST', '/v1/sandboxes', { ...CREATE_BODY, agent: 'other' }],
+    ['POST', '/v1/sandboxes', { ...CREATE_BODY, repo_url: 'http://example.test/repo' }],
+    ['POST', '/v1/sandboxes', { ...CREATE_BODY, runtime_deadline_at: -1 }],
+    ['POST', `/v1/sandboxes/${sid}/state`, { state: 'Idle', expected_version: '2' }],
+    ['DELETE', `/v1/sandboxes/${sid}`, { expected_version: '2', confirm_scope: 'workspace_and_home_volumes' }],
+    ['POST', '/v1/sandboxes', []],
+    ['POST', '/v1/sandboxes', null],
+  ]
+  for (const resource of ['milli_cpu', 'memory_bytes', 'volume_bytes']) for (const bad of [0, -1, 1.5, '1', null]) {
+    cases.push(['POST', '/v1/sandboxes', { ...CREATE_BODY, resources: { ...CREATE_BODY.resources, [resource]: bad } }])
+  }
+  for (const [method, path, body] of cases) {
+    const before = d.cp.snapshot()
+    const r = await req(d.app, method, path, {body, key: 'invalid'})
+    assert.equal(r.status, 422, JSON.stringify(body)); assert.equal(r.body.error.code, 'invalid')
+    assert.deepEqual(d.cp.snapshot(), before)
+  }
+  const r = await d.app.request('/v1/sandboxes', {method: 'POST', headers: {...AUTH, 'Idempotency-Key': 'bad-json'}, body: '{'})
+  assert.equal(r.status, 422)
+})
+
+test('control plane requires an explicitly configured nonempty token', () => {
+  const previous = process.env.SANDBOX_TOKEN
+  delete process.env.SANDBOX_TOKEN
+  try {
+    assert.throws(() => createApp(new MemoryAdapter()), /SANDBOX_TOKEN/)
+    assert.throws(() => createApp(new MemoryAdapter(), {token: ''}), /SANDBOX_TOKEN/)
+    process.env.SANDBOX_TOKEN = 'test-env-token'
+    assert.equal(createApp(new MemoryAdapter()).cp.authorized('Bearer test-env-token'), true)
+  } finally {
+    if (previous === undefined) delete process.env.SANDBOX_TOKEN
+    else process.env.SANDBOX_TOKEN = previous
+  }
+})

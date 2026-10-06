@@ -62,13 +62,13 @@ export function createApiDatasource({ apiBase, token, fetchImpl = fetch }) {
   if (!token) throw new Error('createApiDatasource requires token (bearer on every endpoint)');
   const base = String(apiBase).replace(/\/+$/, '');
 
-  async function request(path, { method = 'GET', body, idempotencyKey } = {}) {
+  async function request(path, { method = 'GET', body, idempotencyKey, signal } = {}) {
     const headers = { Authorization: `Bearer ${token}` }; // token is sent, never logged
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (idempotencyKey !== undefined) headers['Idempotency-Key'] = idempotencyKey;
     let res;
     try {
-      res = await fetchImpl(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+      res = await fetchImpl(base + path, { method, headers, signal, body: body === undefined ? undefined : JSON.stringify(body) });
     } catch (cause) {
       throw new ApiError(null, 'unreachable', 'control plane unreachable', { cause });
     }
@@ -85,13 +85,29 @@ export function createApiDatasource({ apiBase, token, fetchImpl = fetch }) {
   }
 
   async function pollOperation(id, { timeoutMs = 30000, intervalMs = 500 } = {}) {
-    const deadline = Date.now() + timeoutMs;
-    for (;;) {
-      const operation = await request('/v1/operations/' + encodeURIComponent(id));
-      if (operation.state === 'succeeded' || operation.state === 'failed') return operation;
-      if (Date.now() >= deadline) throw new PollTimeoutError(operation);
-      await new Promise(resolve => setTimeout(resolve, Math.max(0, Math.min(intervalMs, deadline - Date.now()))));
-    }
+    if (!Number.isFinite(timeoutMs) || timeoutMs < 0 || timeoutMs > 2147483647 ||
+        !Number.isFinite(intervalMs) || intervalMs < 0) throw new RangeError('invalid polling timing');
+    const controller = new AbortController();
+    let lastOperation = null;
+    let timer;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        reject(new PollTimeoutError(lastOperation));
+        controller.abort();
+      }, timeoutMs);
+    });
+    try {
+      for (;;) {
+        lastOperation = await Promise.race([
+          request('/v1/operations/' + encodeURIComponent(id), {signal: controller.signal}), timeout,
+        ]);
+        if (lastOperation.state === 'succeeded' || lastOperation.state === 'failed') return lastOperation;
+        let pause;
+        try {
+          await Promise.race([new Promise(resolve => { pause = setTimeout(resolve, intervalMs); }), timeout]);
+        } finally { clearTimeout(pause); }
+      }
+    } finally { clearTimeout(timer); }
   }
 
   return {

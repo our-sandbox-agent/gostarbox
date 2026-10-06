@@ -51,8 +51,9 @@ export interface IdempotencyEntry {
   path: string
   fingerprint: string
   status: number
-  operation_id: string
+  operation_id: string | null
   sandbox_id: string
+  response?: unknown
 }
 
 export interface TicketRecord {

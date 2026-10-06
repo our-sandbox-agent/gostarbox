@@ -322,3 +322,41 @@ func TestNewRefusalRejectsUnknownAndOperationCreatingRows(t *testing.T) {
 		t.Fatalf("operation-creating refusal: got %v", err)
 	}
 }
+
+func TestAdmitCapacityChecksEachResourceBoundary(t *testing.T) {
+	t.Parallel()
+	contract := goldenContract(t)
+	request := ResourceVector{MilliCPU: 500, MemoryBytes: 1024, VolumeBytes: 4096}
+	tests := []struct {
+		name      string
+		available ResourceVector
+		reject    bool
+	}{
+		{"exact capacity", request, false},
+		{"cpu only", ResourceVector{499, 1024, 4096}, true},
+		{"memory only", ResourceVector{500, 1023, 4096}, true},
+		{"volume only", ResourceVector{500, 1024, 4095}, true},
+		{"all resources", ResourceVector{499, 1023, 4095}, true},
+	}
+	for _, trigger := range []Trigger{"create", "resume"} {
+		for _, test := range tests {
+			t.Run(string(trigger)+"/"+test.name, func(t *testing.T) {
+				t.Parallel()
+				err := contract.AdmitCapacity(trigger, request, test.available)
+				if !test.reject {
+					if err != nil {
+						t.Fatalf("exact capacity must be admitted: %v", err)
+					}
+					return
+				}
+				var refusal *RefusalError
+				if !errors.As(err, &refusal) {
+					t.Fatalf("overcommit must return a typed refusal: %v", err)
+				}
+				if refusal.ID != "capacity-exceeded" || refusal.Code != "capacity_exceeded" || refusal.HTTPStatus != 409 || refusal.CreatesOperation() {
+					t.Fatalf("unexpected overcommit refusal: %+v", refusal)
+				}
+			})
+		}
+	}
+}
