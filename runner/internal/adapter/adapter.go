@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/our-sandbox-agent/gostarbox/runner/internal/lifecycle"
@@ -71,6 +72,7 @@ type Instance struct {
 }
 
 type operationRecord struct {
+	createSpec      lifecycle.SandboxSpec
 	sandboxID       string
 	trigger         lifecycle.Trigger
 	expectedVersion uint64
@@ -138,7 +140,7 @@ func (f *Fake) Create(ctx context.Context, request CreateRequest) (Instance, err
 	defer f.mu.Unlock()
 
 	if record, ok := f.operations[request.OperationID]; ok {
-		if record.sandboxID != request.SandboxID || record.trigger != "create" {
+		if record.sandboxID != request.SandboxID || record.trigger != "create" || !reflect.DeepEqual(record.createSpec, request.Spec) {
 			return Instance{}, fmt.Errorf(
 				"%w: operation %s belongs to %s", ErrOperationMismatch, request.OperationID, record.sandboxID,
 			)
@@ -161,6 +163,7 @@ func (f *Fake) Create(ctx context.Context, request CreateRequest) (Instance, err
 	f.operations[request.OperationID] = operationRecord{
 		sandboxID:       request.SandboxID,
 		trigger:         "create",
+		createSpec:      cloneSpec(request.Spec),
 		expectedVersion: sandbox.Version,
 		generation:      sandbox.Generation,
 	}
@@ -357,4 +360,14 @@ func checkContext(ctx context.Context) error {
 		return fmt.Errorf("%w: %w", ErrInvalidRequest, err)
 	}
 	return nil
+}
+
+// cloneSpec owns the optional UID value so later caller mutation cannot alter
+// the identity of an already accepted create request.
+func cloneSpec(spec lifecycle.SandboxSpec) lifecycle.SandboxSpec {
+	if spec.PID.ManagementUID != nil {
+		uid := *spec.PID.ManagementUID
+		spec.PID.ManagementUID = &uid
+	}
+	return spec
 }

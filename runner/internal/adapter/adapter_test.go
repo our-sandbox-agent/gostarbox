@@ -347,3 +347,74 @@ func TestFakeRequestAndLookupErrors(t *testing.T) {
 		t.Fatalf("cancelled context: got %v", err)
 	}
 }
+
+func TestFakeCreateRejectsChangedIdentity(t *testing.T) {
+	changes := map[string]func(*lifecycle.SandboxSpec){
+		"cpu":            func(s *lifecycle.SandboxSpec) { s.Resources.MilliCPU++ },
+		"memory":         func(s *lifecycle.SandboxSpec) { s.Resources.MemoryBytes++ },
+		"volume":         func(s *lifecycle.SandboxSpec) { s.Resources.VolumeBytes++ },
+		"workload uid":   func(s *lifecycle.SandboxSpec) { s.PID.WorkloadUID++ },
+		"management uid": func(s *lifecycle.SandboxSpec) { uid := uint64(2000); s.PID.ManagementUID = &uid },
+		"host pids":      func(s *lifecycle.SandboxSpec) { s.PID.HostPidsMax++ },
+		"guest policy":   func(s *lifecycle.SandboxSpec) { s.PID.GuestPidsLimit++; s.PID.NprocSoft++; s.PID.NprocHard++ },
+	}
+	for name, change := range changes {
+		t.Run(name, func(t *testing.T) {
+			fake := testFake(t, lifecycle.ResourceVector{MilliCPU: 1000, MemoryBytes: 2000, VolumeBytes: 4000})
+			request := CreateRequest{SandboxID: "sbx", OperationID: "create", Spec: testSpec()}
+			original, err := fake.Create(context.Background(), request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			change(&request.Spec)
+			if _, err := fake.Create(context.Background(), request); !errors.Is(err, ErrOperationMismatch) {
+				t.Fatalf("changed identity accepted: %v", err)
+			}
+			got, err := fake.Inspect(context.Background(), "sbx")
+			if err != nil || got != original {
+				t.Fatalf("rejection changed state: %+v %v", got, err)
+			}
+		})
+	}
+}
+
+func TestFakeCreateOwnsManagementUIDAndComparesValues(t *testing.T) {
+	fake := testFake(t, lifecycle.ResourceVector{MilliCPU: 1000, MemoryBytes: 2000, VolumeBytes: 4000})
+	uid := uint64(2000)
+	request := CreateRequest{SandboxID: "sbx", OperationID: "create", Spec: testSpec()}
+	request.Spec.PID.ManagementUID = &uid
+	original, err := fake.Create(context.Background(), request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uid = 3000
+	if _, err := fake.Create(context.Background(), request); !errors.Is(err, ErrOperationMismatch) {
+		t.Fatalf("caller mutation changed stored identity: %v", err)
+	}
+	separateUID := uint64(2000)
+	request.Spec.PID.ManagementUID = &separateUID
+	replayed, err := fake.Create(context.Background(), request)
+	if err != nil || replayed != original {
+		t.Fatalf("equal UID value replay rejected: %+v %v", replayed, err)
+	}
+}
+
+func TestFakeCreateReplayStillRejectsInvalidSecurityPolicy(t *testing.T) {
+	for _, field := range []string{"capabilities", "privileges"} {
+		t.Run(field, func(t *testing.T) {
+			fake := testFake(t, lifecycle.ResourceVector{MilliCPU: 1000, MemoryBytes: 2000, VolumeBytes: 4000})
+			request := CreateRequest{SandboxID: "sbx", OperationID: "create", Spec: testSpec()}
+			if _, err := fake.Create(context.Background(), request); err != nil {
+				t.Fatal(err)
+			}
+			if field == "capabilities" {
+				request.Spec.PID.DropAllCapabilities = false
+			} else {
+				request.Spec.PID.NoNewPrivileges = false
+			}
+			if _, err := fake.Create(context.Background(), request); !errors.Is(err, lifecycle.ErrInvalidSpec) {
+				t.Fatalf("invalid security replay accepted: %v", err)
+			}
+		})
+	}
+}
