@@ -31,15 +31,6 @@ jobs:
       - run: npm run build
       - name: Render smoke (headless Chrome against vite preview)
         run: bash scripts/ci-smoke.sh /gostarbox/
-      # tests-only gate (no live smoke): the deploy job only needs to refuse
-      # shipping a demo whose server contract broke; the live cycle already
-      # ran in CI on the same commit
-      - name: Server typecheck and tests
-        working-directory: server
-        run: |
-          npm ci
-          npm run typecheck
-          npm test
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

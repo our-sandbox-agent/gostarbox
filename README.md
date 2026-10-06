@@ -32,20 +32,22 @@ Demo（模擬模式）同[啟動](#啟動)：`npm run dev -- --port 4173`，開 
 ```sh
 cd server
 npm ci
-SANDBOX_TOKEN=<自選隨機通行碼> npm start   # http://127.0.0.1:8787
+SANDBOX_TOKEN="$(openssl rand -hex 24)" npm start   # http://127.0.0.1:8787
 ```
 
-`SANDBOX_TOKEN` 是所有端點共用的唯一 Bearer token，僅供本機開發，不會寫進 server 日誌，也不要提交進 repo。server 只繫結 loopback（127.0.0.1)；埠號預設 8787，可用 `PORT=<埠號>` 覆寫。對外需透過 SSH tunnel，契約見 [docs/contracts/control-plane-api.md](docs/contracts/control-plane-api.md)。
+`SANDBOX_TOKEN` 必須明確設定，未設或空白會拒絕啟動；它是所有端點共用的唯一 Bearer token，僅供本機開發，不會寫進 server 日誌，也不要提交進 repo。server 只繫結 loopback（127.0.0.1)；埠號預設 8787，可用 `PORT=<埠號>` 覆寫。對外需透過 SSH tunnel，契約見 [docs/contracts/control-plane-api.md](docs/contracts/control-plane-api.md)。
 
-測試（三層都在本機可跑）：
+測試（從 repo 根目錄執行；先完成根目錄與 server 的 npm ci）：
 
 ```sh
 npm test && npm run build                          # demo 狀態計時與檔案測試、建置
 python3 -m unittest discover -s scripts -p 'test_*.py'   # Python 契約套件（可執行規格）
-cd server && npm run typecheck && npm test        # server 型別檢查與 node:test 契約測試
-cd runner && go test ./... && go vet ./...         # Go Runner 生命週期契約測試（目前不含 runtime）
+npm --prefix server run typecheck && npm --prefix server test        # server 型別檢查與 node:test 契約測試
+(cd runner && go test ./... && go vet ./...)         # Go Runner 契約測試（目前不含 runtime）
 bash scripts/ci-server-smoke.sh                   # 起 server 跑 create→list→destroy HTTP 契約煙霧測試
 ```
+
+開發瀏覽器 client 時使用 Vite `/v1` 同源代理與 `apiBase: window.location.origin`，不要從 4173 直接跨源連 8787。此代理不會部署到 Pages。
 
 真實模式邊界：瀏覽器 UI 尚未接上真實 API（#15 未完成）；前端 client 已依 [docs/contracts/console-datasource.md](docs/contracts/console-datasource.md) 實作。`scripts/ci-server-smoke.sh` 只驗證 HTTP 契約層；demo 頁面的實際渲染由 `scripts/ci-smoke.sh` 以模擬模式驗證。
 

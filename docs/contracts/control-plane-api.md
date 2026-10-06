@@ -1,6 +1,6 @@
 # Control-plane API contract (M1 internal slice)
 
-Status: **Contract + executable test double delivered; real backend not started.**
+Status: **Contract, Python reference double and TypeScript/Hono HTTP skeleton delivered; memory-only, no Runner or Postgres integration.**
 This is part 1 of issue #76's 分包順序: the machine-readable REST contract
 [control-plane-api.json](control-plane-api.json) plus a stdlib-only executable
 test double, in the repo's fixture+verifier idiom. Part 2 — wiring the real
@@ -65,7 +65,7 @@ Known divergence, deliberate: the API edge maps admission rejection to **429**
 `runner-lifecycle.json` records 409 for the runner-side refusal. The two layers
 must be reconciled when the real backend lands (#11).
 
-## What the real Hono/Postgres implementation must add
+## What remains for Runner/Postgres integration
 
 - **SQL schema preserving the identities** the ADRs fix (per
   `control-plane-api.json` + usage-ledger §1): `workspaces(id)`; `sandboxes(id,
@@ -109,3 +109,17 @@ python3 -m compileall -q scripts
 ```
 
 Both are pure-stdlib and offline.
+
+## PR #129 correctness clarifications
+
+- Resume allocates its generation before creating the operation. Response, poll,
+  replay and completion use the same generation.
+- Accepted destroy supersedes a pending create or Active/Idle policy operation:
+  the previous operation ends as failed with `superseded_by_destroy`. Its late
+  evidence is ignored. Confirmation checks operation ownership, generation and
+  completion phase; acceptance transitions are never marked as success.
+- A successful 200 already-achieved request reserves its idempotency key too.
+  Replay returns that saved response, even after state changes or snapshot restore;
+  a different body with the same key returns 409. It does not create an operation.
+- Test the HTTP skeleton with `npm --prefix server run typecheck`,
+  `npm --prefix server test` and `bash scripts/ci-server-smoke.sh`.

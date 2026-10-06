@@ -16,7 +16,7 @@
       "contract_tests": "scripts/test_control_plane_contract.py",
       "nature": "stdlib-only in-memory test double; request(method, path, headers, body) -> (status, json); snapshot()/restore() simulates API restart; no HTTP server, no external deps"
     },
-    "real_backend": "not started: TypeScript + Hono + Postgres per the language decision; blocked on #11 runner (which waits on the #8 GO)",
+    "real_backend": "TypeScript + Hono HTTP skeleton in server/ with memory-only adapter and contract tests; Postgres and Runner integration remain unimplemented, gated on #11 and #8 GO",
     "deployed": false,
     "integrated": false
   },
@@ -160,21 +160,21 @@
       "target": "requested change; never contains the credential",
       "state": "pending | running | succeeded | failed",
       "expected_version": "fencing version the request carried (null for create)",
-      "generation": "generation in effect for the operation; resume allocates a new one",
+      "generation": "generation in effect for the operation; resume allocates a new one before operation creation; confirmation must match the current operation, generation and completion phase",
       "result": "on success: {observed_state, generation}",
       "error": "on failure: {code, message}",
       "retryable": "bool; true for failed operations after the client re-reads state"
     },
     "semantics": [
       "every state-change/destroy request answers 202 with the operation; clients poll GET /v1/operations/{id} until succeeded/failed",
-      "at most one change operation per sandbox at a time; conflicts answer 409",
+      "at most one change operation per sandbox at a time; conflicts answer 409; accepted destroy supersedes a pending create or Active/Idle policy operation by marking it failed (superseded_by_destroy); late evidence cannot change the current operation",
       "a request timeout does NOT imply not-executed: the client must poll the operation; unknown outcome resolves to Lost via lease expiry, never to an assumption"
     ]
   },
   "idempotency": {
     "required_on": ["POST /v1/sandboxes", "POST /v1/sandboxes/{id}/state", "DELETE /v1/sandboxes/{id}"],
     "scope": "per token/tenant and operation scope; one key maps to at most one accepted request",
-    "same_key_same_body": "the original operation is returned again (no double-create, no second transition); replays stay answerable after an API restart because the map is persisted",
+    "same_key_same_body": "the original operation is returned again, or the saved 200 sandbox response for an already-achieved target (no double-create, no second transition); replays stay answerable after an API restart because the map is persisted",
     "same_key_different_body": {"http_status": 409, "code": "body_conflict"},
     "credential_rule": "the credential field never participates in the body comparison (ADR section 3)",
     "missing_key": {"http_status": 422, "code": "invalid"}
@@ -220,7 +220,9 @@
   "verify": {
     "steps": [
       "python3 -m unittest discover -s scripts -p 'test_*.py'",
-      "python3 -m compileall -q scripts"
+      "python3 -m compileall -q scripts",
+      "npm --prefix server ci && npm --prefix server run typecheck && npm --prefix server test",
+      "bash scripts/ci-server-smoke.sh"
     ]
   },
   "related_tickets": [
