@@ -32,8 +32,6 @@ const COMPUTE_HELD_STATES = new Set([
 ])
 const TERMINAL_TICKET_TTL_MS = 60000
 
-// Dev default only: SANDBOX_TOKEN is the real single trusted token.
-export const DEV_DEFAULT_TOKEN = 'dev-insecure-token'
 export const DEFAULT_CAPACITY: Capacity = {
   milli_cpu: 8000,
   memory_bytes: 16 * 2 ** 30,
@@ -127,7 +125,8 @@ export class ControlPlane {
 
   constructor(store: PersistenceAdapter, opts: ControlPlaneOptions = {}) {
     this.store = store
-    this.token = opts.token ?? process.env.SANDBOX_TOKEN ?? DEV_DEFAULT_TOKEN
+    this.token = opts.token ?? process.env.SANDBOX_TOKEN ?? ''
+    if (!this.token.trim()) throw new Error('SANDBOX_TOKEN must be explicitly configured')
     this.capacity = opts.capacity ?? DEFAULT_CAPACITY
     const url = opts.runnerContractPath ?? new URL('../../docs/contracts/runner-lifecycle.json', import.meta.url)
     const doc = JSON.parse(readFileSync(url, 'utf8')) as LifecycleDoc
@@ -237,7 +236,11 @@ export class ControlPlane {
       refuse(409, 'version_conflict', 'expected_version mismatch; re-read the sandbox')
     }
     if (sb.desired_state === target && sb.observed_state === target && sb.pending_operation === null) {
-      return { status: 200, body: { sandbox: this.sandboxView(sb) } }
+      const response = { sandbox: this.sandboxView(sb) }
+      this.store.putIdempotency({ key: key!, method: 'POST', path,
+        fingerprint: this.fingerprint(body), status: 200, operation_id: null,
+        sandbox_id: sb.sandbox_id, response: structuredClone(response) })
+      return { status: 200, body: response }
     }
     const pending = sb.pending_operation ? this.store.getOperation(sb.pending_operation) : undefined
     if (pending) {
@@ -263,9 +266,9 @@ export class ControlPlane {
         refuse(429, 'capacity_exceeded', 'admission rejected: insufficient host capacity')
       }
     }
-    const op = this.newOperation(sb, 'set_state', trigger, { state: target, suspend_mode: mode })
     const intermediate = this.successTarget(sb.observed_state, trigger)
     if (trigger === 'resume') sb.generation += 1 // cold resume allocates a new generation
+    const op = this.newOperation(sb, 'set_state', trigger, { state: target, suspend_mode: mode })
     if (intermediate !== undefined && INTERMEDIATE_STATES.has(intermediate)) sb.observed_state = intermediate
     sb.desired_state = target
     sb.version += 1
@@ -307,6 +310,15 @@ export class ControlPlane {
     }
     if ((sb.observed_state === 'Error' || sb.observed_state === 'Lost') && !sb.reconciled) {
       refuse(409, 'opposite_operation', 'reconciliation/fencing must precede destroy')
+    }
+    // Destroy may supersede Creating or an unconfirmed Active/Idle policy change.
+    // Resolve the old operation before replacing its ownership of the sandbox.
+    if (sb.pending_operation) {
+      const old = this.operation(sb.pending_operation)
+      old.state = 'failed'
+      old.error = { code: 'superseded_by_destroy', message: 'destroy superseded this operation' }
+      old.updated_at = this.store.tick()
+      this.store.putOperation(old)
     }
     const op = this.newOperation(sb, 'destroy', 'destroy', { scope: CONFIRM_SCOPE })
     sb.observed_state = 'Destroying'
@@ -361,6 +373,13 @@ export class ControlPlane {
     if (op.state === 'succeeded' || op.state === 'failed') return this.opView(op)
     const sb = this.sandbox(op.sandbox_id)
     const trigger = op.trigger
+    const success = this.successTarget(sb.observed_state, trigger)
+    // Only the current operation in its completion phase can supply evidence.
+    // Acceptance transitions (e.g. Error -> Destroying) are not completion.
+    if (sb.pending_operation !== operationId || op.generation !== sb.generation ||
+        success === undefined || INTERMEDIATE_STATES.has(success)) {
+      throw new Error('stale operation evidence or invalid completion phase')
+    }
     let toState: string
     if (error !== undefined) {
       if (!this.errorCapable.has(sb.observed_state)) {
@@ -616,7 +635,8 @@ export class ControlPlane {
   }
 
   private idempotentReplay(entry: IdempotencyEntry): ApiResult {
-    const op = this.operation(entry.operation_id)
+    if (entry.status === 200) return { status: 200, body: structuredClone(entry.response) }
+    const op = this.operation(entry.operation_id!)
     const body =
       entry.method === 'POST' && entry.path === '/v1/sandboxes'
         ? { sandbox_id: entry.sandbox_id, operation: this.opView(op) }

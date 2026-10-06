@@ -279,3 +279,24 @@ test('real client: server-authoritative surface — no demo members, localStorag
     else globalThis.localStorage = previous;
   }
 });
+
+test('poll deadline aborts stalled fetch and body, retaining last observation', async () => {
+  for (const stage of ['fetch', 'body', 'after-pending']) {
+    let signal; let calls = 0;
+    const pending = {operation_id: 'op', state: 'pending'};
+    const api = createApiDatasource({ apiBase: '/api', token: 'test', fetchImpl: async (_url, opts) => {
+      signal = opts.signal;
+      calls++;
+      if (stage === 'after-pending' && calls === 1) return {ok: true, json: async () => pending};
+      if (stage === 'body') return {ok: true, json: () => new Promise(() => {})};
+      return new Promise(() => {});
+    }});
+    const result = await Promise.race([
+      api.pollOperation('op', {timeoutMs: 20, intervalMs: 1}).catch(e => e),
+      new Promise(resolve => setTimeout(() => resolve('deadline not enforced'), 200)),
+    ]);
+    assert.ok(result instanceof PollTimeoutError, stage);
+    assert.deepEqual(result.operation, stage === 'after-pending' ? pending : null);
+    assert.equal(signal.aborted, true);
+  }
+});
