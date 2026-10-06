@@ -18,6 +18,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: runner/go.mod
+          cache: false
       - run: npm ci
       - run: npm test
       - run: npm run build
@@ -34,5 +38,11 @@ jobs:
           npm ci
           npm run typecheck
           npm test
+      - name: Runner contract tests
+        working-directory: runner
+        run: |
+          test -z "$(gofmt -l .)"
+          go test ./...
+          go vet ./...
       - name: Server contract smoke (live HTTP, in-memory adapter)
         run: bash scripts/ci-server-smoke.sh
