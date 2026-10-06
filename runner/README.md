@@ -16,6 +16,11 @@ Runner-side capacity admission uses the lifecycle contract's 409
 429 at its edge; that documented divergence is intentionally preserved rather
 than silently rewritten here.
 
+`internal/adapter` defines a future runtime port and a deterministic in-memory
+fake for operation/generation tests. The fake conservatively retains reserved
+capacity until confirmed destroy; it is not deployable runtime code and does
+not model reconcile authorization, Docker, runsc, volumes, or processes.
+
 It is **not a running Runner**: it does not invoke Docker or runsc, create
 processes or volumes, open a terminal, handle credentials, or persist state.
 #8 remains the gate for runtime work; this package makes no runtime claim.
