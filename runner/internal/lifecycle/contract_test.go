@@ -299,3 +299,22 @@ func TestContractValidationMutationsAreRejected(t *testing.T) {
 		})
 	}
 }
+
+func TestResumeAllocatesNewGenerationFromEveryRecoverableState(t *testing.T) {
+	t.Parallel()
+	contract := goldenContract(t)
+	for _, state := range []State{"Suspend", "Error", "Lost"} {
+		t.Run(string(state), func(t *testing.T) {
+			t.Parallel()
+			before := Sandbox{Contract: contract, State: state, Version: 12, Generation: 4}
+			after, err := before.Transition("resume", OutcomeSuccess, 12, 4)
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			// Assert the contract promise independently of allocatesGeneration.
+			if after.State != "Resuming" || after.Version != 13 || after.Generation != 5 {
+				t.Fatalf("resume must allocate a new fenced execution generation: %+v", after)
+			}
+		})
+	}
+}
