@@ -104,3 +104,5 @@ bash scripts/ci-server-smoke.sh                   # 起 server 跑 create→list
 見 [CONTRIBUTING.md](CONTRIBUTING.md)：分支與 PR、測試、證據與秘密、內容即程式碼、重構與死碼、決策紀錄。每條規則都註明是哪次經驗讓它存在。
 
 送 PR 前最低限度：以 `main` 為基底、一個 PR 一件事、純邏輯有測試、把關條件有會失敗的測試、證據不含憑證、說明寫清楚驗證了什麼與沒驗到什麼。
+
+Postgres 儲存層與 migration 已提供，但 HTTP 仍用記憶體；資料庫接線由 #136 接續。驗證方式與邊界見 [Postgres store](docs/contracts/postgres-store.md)。

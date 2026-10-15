@@ -7,6 +7,17 @@ permissions:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: gostarbox_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gostarbox_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,6 +49,11 @@ jobs:
           npm ci
           npm run typecheck
           npm test
+      - name: PostgreSQL persistence integration
+        working-directory: server
+        env:
+          GOSTARBOX_TEST_DATABASE_URL: postgres://postgres:ci-test-only@127.0.0.1:5432/gostarbox_test
+        run: npm run test:postgres
       - name: Runner contract tests
         working-directory: runner
         run: |

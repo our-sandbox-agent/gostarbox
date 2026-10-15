@@ -6,14 +6,18 @@
   "scripts": {
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "start": "tsx src/main.ts"
+    "start": "tsx src/main.ts",
+    "test:postgres": "node --import tsx --test test-postgres/*.test.ts",
+    "db:migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
-    "hono": "^4.7.0"
+    "hono": "^4.7.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.19.0",
     "typescript": "^5.8.0"
   }

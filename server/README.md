@@ -8,15 +8,17 @@ and the node:test suite in `test/contract.test.ts` is its port.
 
 ## Status — what is and is not real
 
-- **In-memory persistence only** (`MemoryAdapter`, with `snapshot()/restore()`
-  simulating an API restart). The `PostgresAdapter` is a placeholder that
-  **throws on any use** — no fake persistence, no mock-success paths.
+- **HTTP still uses in-memory persistence** (`MemoryAdapter`, with
+  `snapshot()/restore()` simulating an API restart). A separate async
+  `PostgresStore` now provides real transactions and migrations; #136 will wire
+  the HTTP service into it. See [Postgres store](../docs/contracts/postgres-store.md).
 - **No Runner integration.** observed_state moves only through the
   Runner-evidence hooks (`cp.advance` / `cp.confirm` / `cp.expireLease` /
   `cp.markReconciled`), which are test stand-ins until #11 lands. HTTP 202 is
   acceptance, never success.
-- Real Runner + Postgres integration, deployment, multi-tenant authorization:
-  blocked on #11, which waits on the #8 GO (per the #76 packaging).
+- Database API integration (#136) can proceed without #8 GO. Real Runner
+  integration and full #76 acceptance still wait on #11/#8; deployment and
+  multi-tenant authorization remain separate work.
 
 ## Run
 
@@ -35,6 +37,7 @@ SANDBOX_TOKEN="$(openssl rand -hex 24)" npm start  # http://127.0.0.1:8787
 ```sh
 npm test         # node --import tsx --test test/*.test.ts
 npm run typecheck  # tsc --noEmit (strict)
+npm run test:postgres # real Postgres; requires GOSTARBOX_TEST_DATABASE_URL
 ```
 
 The state machine is loaded from `docs/contracts/runner-lifecycle.json` at

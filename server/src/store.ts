@@ -1,6 +1,5 @@
-// Persistence shapes for the control plane. MemoryAdapter is the in-memory
-// implementation used by the skeleton; PostgresAdapter is a placeholder that
-// refuses to work until the real backend lands (no fake persistence).
+// Shared record shapes and the synchronous in-memory API test adapter.
+// Async durable storage lives in postgres.ts; HTTP transaction wiring is #136.
 
 export interface Resources {
   milli_cpu: number
@@ -167,66 +166,5 @@ export class MemoryAdapter implements PersistenceAdapter {
     this.operations = new Map(Object.entries(snapshot.operations))
     this.idempotency = new Map(snapshot.idempotency.map((e) => [e.key, e]))
     this.tickets = new Map()
-  }
-}
-
-const NOT_IMPLEMENTED =
-  'PostgresAdapter is a placeholder: real persistence lands with the #11 runner integration (gated on the #8 GO). It intentionally throws instead of faking persistence.'
-
-export class PostgresAdapter implements PersistenceAdapter {
-  private refuse(): never {
-    throw new Error(NOT_IMPLEMENTED)
-  }
-
-  nextId(_prefix: string): string {
-    return this.refuse()
-  }
-
-  tick(): number {
-    return this.refuse()
-  }
-
-  now(): number {
-    return this.refuse()
-  }
-
-  getSandbox(_id: string): SandboxRecord | undefined {
-    return this.refuse()
-  }
-
-  listSandboxes(): SandboxRecord[] {
-    return this.refuse()
-  }
-
-  putSandbox(_sandbox: SandboxRecord): void {
-    this.refuse()
-  }
-
-  getOperation(_id: string): OperationRecord | undefined {
-    return this.refuse()
-  }
-
-  putOperation(_operation: OperationRecord): void {
-    this.refuse()
-  }
-
-  getIdempotency(_key: string): IdempotencyEntry | undefined {
-    return this.refuse()
-  }
-
-  putIdempotency(_entry: IdempotencyEntry): void {
-    this.refuse()
-  }
-
-  putTicket(_ticket: TicketRecord): void {
-    this.refuse()
-  }
-
-  snapshot(): Snapshot {
-    return this.refuse()
-  }
-
-  restore(_snapshot: Snapshot): void {
-    this.refuse()
   }
 }

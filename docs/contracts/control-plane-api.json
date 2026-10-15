@@ -16,7 +16,7 @@
       "contract_tests": "scripts/test_control_plane_contract.py",
       "nature": "stdlib-only in-memory test double; request(method, path, headers, body) -> (status, json); snapshot()/restore() simulates API restart; no HTTP server, no external deps"
     },
-    "real_backend": "TypeScript + Hono HTTP skeleton in server/ with memory-only adapter and contract tests; Postgres and Runner integration remain unimplemented, gated on #11 and #8 GO",
+    "real_backend": "TypeScript + Hono HTTP skeleton in server/ with memory-only adapter and contract tests; async PostgresStore/migrations delivered in #135; HTTP database wiring is #136 and can proceed independently; real Runner integration still gated on #11/#8",
     "deployed": false,
     "integrated": false
   },
