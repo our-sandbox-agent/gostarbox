@@ -1,6 +1,6 @@
 # Control-plane API contract (M1 internal slice)
 
-Status: **Contract, Python reference double and TypeScript/Hono HTTP skeleton delivered; memory-only, no Runner or Postgres integration.**
+Status: **Contract, Python reference double and TypeScript/Hono HTTP skeleton delivered; HTTP remains memory-only; async Postgres store/migrations are implemented separately (#135), HTTP integration is #136; no Runner integration.**
 This is part 1 of issue #76's 分包順序: the machine-readable REST contract
 [control-plane-api.json](control-plane-api.json) plus a stdlib-only executable
 test double, in the repo's fixture+verifier idiom. Part 2 — wiring the real
@@ -66,6 +66,10 @@ Known divergence, deliberate: the API edge maps admission rejection to **429**
 must be reconciled when the real backend lands (#11).
 
 ## What remains for Runner/Postgres integration
+
+The storage slice now implements identities, atomic writes and rerunnable
+migrations ([details](postgres-store.md)). #136 still owns HTTP transaction
+wiring, cross-workspace capacity and true API restart tests. #77 owns the outbox.
 
 - **SQL schema preserving the identities** the ADRs fix (per
   `control-plane-api.json` + usage-ledger §1): `workspaces(id)`; `sandboxes(id,

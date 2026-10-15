@@ -8,7 +8,6 @@ import assert from 'node:assert/strict'
 import { createApp, ControlPlane, type Capacity, type ControlPlaneApp } from '../src/app.js'
 import {
   MemoryAdapter,
-  PostgresAdapter,
   type IdempotencyEntry,
   type OperationRecord,
   type PersistenceAdapter,
@@ -472,12 +471,6 @@ test('same target already achieved -> 200 sandbox view, no second operation', as
   await suspendConfirmed(d, sid)
   r = await state(d, sid, { state: 'Suspend', expected_version: await versionOf(d, sid) }, 'b')
   assert.equal(r.status, 200)
-})
-
-test('PostgresAdapter is a placeholder that refuses all use (no fake persistence)', () => {
-  const pg = new PostgresAdapter()
-  assert.throws(() => pg.listSandboxes(), /PostgresAdapter is a placeholder/)
-  assert.throws(() => pg.snapshot(), /PostgresAdapter is a placeholder/)
 })
 
 // ----------------------------------------------------------------- guards
